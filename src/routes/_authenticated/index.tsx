@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Dashboard — WEZA HUB" },
@@ -12,9 +12,5 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: Index,
+  component: DashboardShell,
 });
-
-function Index() {
-  return <DashboardShell />;
-}
