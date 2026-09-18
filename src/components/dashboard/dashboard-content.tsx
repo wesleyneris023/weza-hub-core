@@ -28,7 +28,7 @@ function MetricPlaceholder({ title, description, icon: Icon, value, isLoading }:
 }
 
 interface DashboardContentProps {
-  metrics?: DashboardMetrics;
+  metrics: DashboardMetrics | undefined;
   isLoading: boolean;
   hasError: boolean;
 }
