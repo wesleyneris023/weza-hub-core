@@ -1,20 +1,19 @@
 import { useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Menu, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { AppSidebar } from "./app-sidebar";
 import { DashboardContent } from "./dashboard-content";
-import { getDashboardMetrics } from "@/lib/dashboard.functions";
+import { fetchDashboardMetrics } from "@/lib/dashboard.query";
 
 export function DashboardShell() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const fetchMetrics = useServerFn(getDashboardMetrics);
   const metricsQuery = useQuery({
     queryKey: ["dashboard-metrics"],
-    queryFn: () => fetchMetrics(),
+    queryFn: fetchDashboardMetrics,
     staleTime: 60_000,
+    retry: false,
   });
 
   return (

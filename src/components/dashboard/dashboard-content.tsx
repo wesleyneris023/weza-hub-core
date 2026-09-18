@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 import { CreditCard, Globe2, RefreshCcw, Users } from "lucide-react";
-import type { DashboardMetrics } from "@/lib/dashboard.functions";
+import type { DashboardMetrics } from "@/lib/dashboard.query";
 
 interface MetricPlaceholderProps {
   title: string;
