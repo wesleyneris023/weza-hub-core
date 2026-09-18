@@ -63,6 +63,7 @@
   --color-glass-border: var(--glass-border);
   --color-surface-soft: var(--surface-soft);
   --color-surface-strong: var(--surface-strong);
+  --color-surface-glass: var(--card);
   --color-sidebar-glass: var(--sidebar-glass);
   --color-header-glass: var(--header-glass);
   --color-overlay: var(--overlay);
