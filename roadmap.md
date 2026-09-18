@@ -5,3 +5,11 @@
 - [x] Após a migration, conectar os indicadores existentes aos dados reais sem alterar o visual.
 - [x] Validar RLS, banco vazio, rota protegida e tela de acesso.
 - [ ] Vincular uma conta Supabase existente ao papel `admin` e validar os indicadores autenticados — bloqueado até existir ou ser indicada uma conta real.
+
+## Módulo Clientes
+
+- [ ] Criar rota autenticada e navegação para Clientes sem alterar o visual global.
+- [ ] Implementar consulta paginada, pesquisa, filtro e contagens relacionadas.
+- [ ] Implementar cadastro, edição, detalhe e exclusão protegida.
+- [ ] Integrar notificações e invalidação do indicador de clientes ativos.
+- [ ] Validar estados, segurança, responsividade e fluxo público sem dados fictícios.
