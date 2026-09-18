@@ -1,12 +1,21 @@
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { Menu, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { AppSidebar } from "./app-sidebar";
 import { DashboardContent } from "./dashboard-content";
+import { getDashboardMetrics } from "@/lib/dashboard.functions";
 
 export function DashboardShell() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const fetchMetrics = useServerFn(getDashboardMetrics);
+  const metricsQuery = useQuery({
+    queryKey: ["dashboard-metrics"],
+    queryFn: () => fetchMetrics(),
+    staleTime: 60_000,
+  });
 
   return (
     <div className="app-background relative min-h-screen overflow-hidden bg-background text-foreground">
@@ -33,7 +42,7 @@ export function DashboardShell() {
               W
             </div>
           </header>
-          <DashboardContent />
+          <DashboardContent metrics={metricsQuery.data} isLoading={metricsQuery.isLoading} hasError={metricsQuery.isError} />
         </div>
       </div>
     </div>

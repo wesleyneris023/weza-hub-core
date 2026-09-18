@@ -1,20 +1,16 @@
 import type { ComponentType } from "react";
 import { CreditCard, Globe2, RefreshCcw, Users } from "lucide-react";
+import type { DashboardMetrics } from "@/lib/dashboard.functions";
 
 interface MetricPlaceholderProps {
   title: string;
   description: string;
   icon: ComponentType<{ className?: string }>;
+  value: string;
+  isLoading: boolean;
 }
 
-const placeholders: MetricPlaceholderProps[] = [
-  { title: "Clientes ativos", description: "Base de clientes", icon: Users },
-  { title: "Sites online", description: "Projetos publicados", icon: Globe2 },
-  { title: "Receita recorrente", description: "Assinaturas ativas", icon: CreditCard },
-  { title: "Manutenção", description: "Serviços em andamento", icon: RefreshCcw },
-];
-
-function MetricPlaceholder({ title, description, icon: Icon }: MetricPlaceholderProps) {
+function MetricPlaceholder({ title, description, icon: Icon, value, isLoading }: MetricPlaceholderProps) {
   return (
     <article className="rounded-xl border border-glass-border bg-surface-glass p-5 shadow-soft backdrop-blur-xl">
       <div className="flex items-center justify-between gap-3">
@@ -23,13 +19,30 @@ function MetricPlaceholder({ title, description, icon: Icon }: MetricPlaceholder
           <Icon className="size-4" />
         </span>
       </div>
-      <p className="mt-4 font-display text-3xl font-bold text-foreground" aria-label="Valor ainda não disponível">—</p>
+      <p className="mt-4 min-h-9 font-display text-3xl font-bold text-foreground" aria-live="polite">
+        {isLoading ? <span className="inline-block h-8 w-16 animate-pulse rounded-md bg-surface-strong" aria-label="Carregando indicador" /> : value}
+      </p>
       <p className="mt-1 text-xs text-subtle">{description}</p>
     </article>
   );
 }
 
-export function DashboardContent() {
+interface DashboardContentProps {
+  metrics?: DashboardMetrics;
+  isLoading: boolean;
+  hasError: boolean;
+}
+
+const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+export function DashboardContent({ metrics, isLoading, hasError }: DashboardContentProps) {
+  const placeholders: MetricPlaceholderProps[] = [
+    { title: "Clientes ativos", description: "Base de clientes", icon: Users, value: String(metrics?.clientesAtivos ?? 0), isLoading },
+    { title: "Sites online", description: "Projetos publicados", icon: Globe2, value: String(metrics?.sitesAtivos ?? 0), isLoading },
+    { title: "Assinaturas", description: "Assinaturas ativas", icon: RefreshCcw, value: String(metrics?.assinaturasAtivas ?? 0), isLoading },
+    { title: "Receita recorrente", description: "Receita mensal", icon: CreditCard, value: currency.format(metrics?.receitaMensal ?? 0), isLoading },
+  ];
+
   return (
     <main id="main-content" className="flex-1 px-5 py-8 sm:px-7 lg:px-8 lg:py-10">
       <div className="mx-auto max-w-7xl">
@@ -44,6 +57,7 @@ export function DashboardContent() {
         <section aria-label="Indicadores preparados" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {placeholders.map((item) => <MetricPlaceholder key={item.title} {...item} />)}
         </section>
+        {hasError ? <p role="alert" className="mt-3 text-sm text-destructive">Não foi possível carregar os indicadores desta conta.</p> : null}
 
         <section className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
           <div className="min-h-72 rounded-xl border border-glass-border bg-surface-glass p-6 shadow-soft backdrop-blur-xl">
