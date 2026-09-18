@@ -23,7 +23,7 @@ function MetricPlaceholder({ title, description, icon: Icon }: MetricPlaceholder
           <Icon className="size-4" />
         </span>
       </div>
-      <p className="mt-4 font-display text-3xl font-bold text-foreground">—</p>
+      <p className="mt-4 font-display text-3xl font-bold text-foreground" aria-label="Valor ainda não disponível">—</p>
       <p className="mt-1 text-xs text-subtle">{description}</p>
     </article>
   );

@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   BadgeDollarSign,
   CreditCard,
@@ -51,19 +52,31 @@ function Brand() {
 
 function NavigationItem({ item }: { item: NavItem }) {
   const Icon = item.icon;
+  if (item.available) {
+    return (
+      <Link
+        to="/"
+        activeOptions={{ exact: true }}
+        className="flex h-10 items-center gap-3 rounded-lg bg-surface-strong px-3 text-sm font-semibold text-foreground shadow-soft ring-1 ring-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        aria-current="page"
+      >
+        <Icon className="size-4 text-primary" />
+        <span>{item.label}</span>
+      </Link>
+    );
+  }
+
   return (
-    <div
-      className={cn(
-        "flex h-10 items-center gap-3 rounded-lg px-3 text-sm",
-        item.available
-          ? "bg-surface-strong font-semibold text-foreground shadow-soft ring-1 ring-primary/15"
-          : "font-medium text-muted-foreground",
-      )}
+    <Button
+      variant="ghost"
+      disabled
+      className="h-10 w-full justify-start rounded-lg px-3 font-medium text-muted-foreground disabled:opacity-100"
+      aria-label={`${item.label}, disponível em breve`}
     >
-      <Icon className={cn("size-4", item.available ? "text-primary" : "text-subtle")} />
+      <Icon className="size-4 text-subtle" />
       <span>{item.label}</span>
-      {!item.available && <span className="ml-auto text-[10px] font-medium text-subtle">Em breve</span>}
-    </div>
+      <span className="ml-auto text-[11px] font-medium text-muted-foreground">Em breve</span>
+    </Button>
   );
 }
 
@@ -82,6 +95,8 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
       )}
       <aside
         aria-label="Navegação principal"
+        aria-modal={mobileOpen ? "true" : undefined}
+        role={mobileOpen ? "dialog" : undefined}
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-glass-border bg-sidebar-glass px-4 py-5 backdrop-blur-2xl transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:w-64 lg:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
