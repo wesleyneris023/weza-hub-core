@@ -37,7 +37,7 @@ function AuthPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) return setErrorMessage("Não foi possível entrar. Verifique suas credenciais.");
-    await navigate({ to: "/" });
+    await navigate({ to: "/dashboard" });
   }
 
   return (

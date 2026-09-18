@@ -55,7 +55,7 @@ function NavigationItem({ item }: { item: NavItem }) {
   if (item.available) {
     return (
       <Link
-        to="/"
+        to="/dashboard"
         activeOptions={{ exact: true }}
         className="flex h-10 items-center gap-3 rounded-lg bg-surface-strong px-3 text-sm font-semibold text-foreground shadow-soft ring-1 ring-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         aria-current="page"
