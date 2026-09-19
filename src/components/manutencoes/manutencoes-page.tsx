@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, CalendarClock, CheckCircle2, Clock3, Pencil, Plus, Search, Wrench } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock3, Pencil, Plus, Search, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,9 +17,12 @@ const priorities: { value: ManutencaoPrioridade; label: string }[] = [
   { value: "alta", label: "Alta" }, { value: "urgente", label: "Urgente" },
 ];
 const serviceTypes = ["Correção de erro", "Atualização de conteúdo", "Atualização técnica", "Ajuste visual", "Domínio e hospedagem", "Backup e segurança", "Melhoria / nova funcionalidade", "Outro"];
-const blank = { cliente_id: "", website_id: "", titulo: "", descricao: "", tipo: "", status: "aberta" as ManutencaoStatus, prioridade: "media" as ManutencaoPrioridade, data_conclusao: "", observacoes: "" };
+const localDate = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+const dateOnly = (value?: string | null) => value ? localDate(new Date(value)) : localDate();
 const dateTimeLocal = (value?: string | null) => value ? (() => { const d = new Date(value); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}T${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; })() : "";
 const dateLabel = (value?: string | null) => value ? new Date(value).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }) : "—";
+const blank = { cliente_id: "", website_id: "", titulo: "", descricao: "", tipo: "", status: "aberta" as ManutencaoStatus, prioridade: "media" as ManutencaoPrioridade, data_abertura: localDate(), data_conclusao: "", observacoes: "" };
+const toIsoAtLocalNoon = (date: string) => new Date(`${date}T12:00:00`).toISOString();
 
 export function ManutencoesPage() {
   const qc = useQueryClient();
@@ -42,15 +45,20 @@ export function ManutencoesPage() {
     onSuccess: async () => { setOpen(false); setEditing(null); await qc.invalidateQueries({ queryKey: manutencoesQueryKey }); toast.success(editing ? "Manutenção atualizada." : "Manutenção registrada."); },
     onError: e => toast.error(e instanceof Error ? e.message : "Não foi possível salvar a manutenção."),
   });
-  const startCreate = () => { setEditing(null); setForm({ ...blank }); setOpen(true); };
-  const startEdit = (m: Manutencao) => { setEditing(m); setForm({ cliente_id: m.cliente_id, website_id: m.website_id, titulo: m.titulo, descricao: m.descricao ?? "", tipo: m.tipo, status: m.status, prioridade: m.prioridade, data_conclusao: dateTimeLocal(m.data_conclusao), observacoes: m.observacoes ?? "" }); setOpen(true); };
+  const startCreate = () => { setEditing(null); setForm({ ...blank, data_abertura: localDate() }); setOpen(true); };
+  const startEdit = (m: Manutencao) => { setEditing(m); setForm({ cliente_id: m.cliente_id, website_id: m.website_id, titulo: m.titulo, descricao: m.descricao ?? "", tipo: m.tipo, status: m.status, prioridade: m.prioridade, data_abertura: dateOnly(m.data_abertura), data_conclusao: dateTimeLocal(m.data_conclusao), observacoes: m.observacoes ?? "" }); setOpen(true); };
   const set = (key: keyof typeof blank, value: string) => setForm(prev => ({ ...prev, [key]: value }));
-  const setStatus = (value: ManutencaoStatus) => { set("status", value); if (value === "concluida" && !form.data_conclusao) set("data_conclusao", dateTimeLocal(new Date().toISOString())); if (value !== "concluida") set("data_conclusao", ""); };
+  const setStatus = (value: ManutencaoStatus) => {
+    set("status", value);
+    if (value === "concluida" && !form.data_conclusao) set("data_conclusao", dateTimeLocal(new Date().toISOString()));
+    if (value !== "concluida") set("data_conclusao", "");
+  };
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.cliente_id || !form.website_id || !form.titulo.trim() || !form.tipo.trim()) { toast.error("Selecione cliente e website e informe título e tipo de serviço."); return; }
+    if (!form.cliente_id || !form.website_id || !form.titulo.trim() || !form.tipo.trim() || !form.data_abertura) { toast.error("Selecione cliente e website e informe título, tipo de serviço e data de abertura."); return; }
     if (!(websitesQ.data ?? []).some(w => w.id === form.website_id && w.cliente_id === form.cliente_id)) { toast.error("Selecione um website pertencente ao cliente informado."); return; }
-    mutation.mutate({ cliente_id: form.cliente_id, website_id: form.website_id, titulo: form.titulo.trim(), descricao: form.descricao.trim() || null, tipo: form.tipo.trim(), status: form.status, prioridade: form.prioridade, data_conclusao: form.status === "concluida" ? (form.data_conclusao ? new Date(form.data_conclusao).toISOString() : new Date().toISOString()) : null, observacoes: form.observacoes.trim() || null });
+    if (form.status === "concluida" && !form.data_conclusao) { toast.error("Informe a data e hora da conclusão."); return; }
+    mutation.mutate({ cliente_id: form.cliente_id, website_id: form.website_id, titulo: form.titulo.trim(), descricao: form.descricao.trim() || null, tipo: form.tipo.trim(), status: form.status, prioridade: form.prioridade, data_abertura: toIsoAtLocalNoon(form.data_abertura), data_conclusao: form.status === "concluida" ? new Date(form.data_conclusao).toISOString() : null, observacoes: form.observacoes.trim() || null });
   };
 
   return <main id="main-content" className="flex-1 px-5 py-8 sm:px-7 lg:px-8 lg:py-10"><div className="mx-auto max-w-7xl">
@@ -64,10 +72,11 @@ export function ManutencoesPage() {
     <Field label="Website *"><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.website_id} onChange={e=>set("website_id",e.target.value)} disabled={!form.cliente_id||websitesQ.isLoading||!(websitesQ.data?.length)}><option value="">Selecione um website</option>{(websitesQ.data??[]).map(w=><option key={w.id} value={w.id}>{w.nome}{w.dominio?` · ${w.dominio}`:""}</option>)}</select>{form.cliente_id&&!websitesQ.isLoading&&!websitesQ.data?.length&&<p className="text-xs text-amber-500">Esse cliente ainda não possui website cadastrado.</p>}</Field>
     <Field label="Título da solicitação *"><Input value={form.titulo} onChange={e=>set("titulo",e.target.value)} maxLength={160} placeholder="Ex.: Corrigir formulário de contato"/></Field>
     <Field label="Tipo de serviço *"><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.tipo} onChange={e=>set("tipo",e.target.value)}><option value="">Selecione o tipo</option>{serviceTypes.map(t=><option key={t} value={t}>{t}</option>)}</select></Field>
-    <Field label="Descrição do problema / serviço"><Textarea rows={3} value={form.descricao} onChange={e=>set("descricao",e.target.value)} placeholder="Descreva a solicitação, erro ou ajuste necessário..."/></Field>
-    <div className="grid gap-4 sm:grid-cols-2"><Field label="Prioridade"><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.prioridade} onChange={e=>set("prioridade",e.target.value as ManutencaoPrioridade)}>{priorities.map(p=><option key={p.value} value={p.value}>{p.label}</option>)}</select></Field><Field label="Status"><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.status} onChange={e=>setStatus(e.target.value as ManutencaoStatus)}>{statusOptions.filter(s=>s.value!=="todos").map(s=><option key={s.value} value={s.value}>{s.label}</option>)}</select></Field></div>
-    {form.status==="concluida"&&<Field label="Data e hora da conclusão"><Input type="datetime-local" value={form.data_conclusao} onChange={e=>set("data_conclusao",e.target.value)}/></Field>}
-    <Field label="Observações internas"><Textarea rows={3} value={form.observacoes} onChange={e=>set("observacoes",e.target.value)} placeholder="Anotações internas, retorno ao cliente, próximos passos..."/></Field>
+    <Field label="Descrição do problema / serviço"><Textarea rows={3} value={form.descricao} onChange={e=>set("descricao",e.target.value)} maxLength={2000} placeholder="Descreva a solicitação, erro ou ajuste necessário..."/><p className="text-right text-xs text-muted-foreground">{form.descricao.length}/2000</p></Field>
+    <div className="grid gap-4 sm:grid-cols-2"><Field label="Prioridade *"><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.prioridade} onChange={e=>set("prioridade",e.target.value as ManutencaoPrioridade)}>{priorities.map(p=><option key={p.value} value={p.value}>{p.label}</option>)}</select></Field><Field label="Status *"><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={form.status} onChange={e=>setStatus(e.target.value as ManutencaoStatus)}>{statusOptions.filter(s=>s.value!=="todos").map(s=><option key={s.value} value={s.value}>{s.label}</option>)}</select></Field></div>
+    <div className="grid gap-4 sm:grid-cols-2"><Field label="Data de abertura *"><Input type="date" value={form.data_abertura} max={localDate()} onChange={e=>set("data_abertura",e.target.value)} required/></Field>{form.status==="concluida"&&<Field label="Data e hora da conclusão *"><Input type="datetime-local" value={form.data_conclusao} min={form.data_abertura ? `${form.data_abertura}T00:00` : undefined} onChange={e=>set("data_conclusao",e.target.value)} required/></Field>}</div>
+    <p className="rounded-md border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">A data de abertura vem preenchida com hoje. Ao marcar a solicitação como concluída, a data e hora da conclusão são preenchidas automaticamente e podem ser ajustadas.</p>
+    <Field label="Observações internas"><Textarea rows={3} value={form.observacoes} onChange={e=>set("observacoes",e.target.value)} maxLength={1000} placeholder="Anotações internas, retorno ao cliente, próximos passos..."/><p className="text-right text-xs text-muted-foreground">{form.observacoes.length}/1000</p></Field>
     <SheetFooter className="gap-2 pt-2"><Button type="button" variant="outline" onClick={()=>setOpen(false)} disabled={mutation.isPending}>Cancelar</Button><Button type="submit" disabled={mutation.isPending||!clientsQ.data?.length}>{mutation.isPending?"Salvando...":"Salvar manutenção"}</Button></SheetFooter></form>
   </SheetContent></Sheet></main>;
 }
