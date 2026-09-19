@@ -28,10 +28,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # TanStack Router generates routeTree.gen.ts during Vite build.
+      # Build first so TypeScript checks the current route manifest.
+      - name: Production build
+        run: npm run build
+
       - name: TypeScript check
         if: ${{ !cancelled() }}
         run: npx tsc --noEmit
-
-      - name: Production build
-        if: ${{ !cancelled() }}
-        run: npm run build
