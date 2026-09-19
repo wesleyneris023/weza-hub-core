@@ -9,13 +9,13 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { atualizarFaturamento, criarFaturamento, faturamentosQueryKey, listarAssinaturasFaturamento, listarClientesFaturamento, listarFaturamentos, type Faturamento, type FaturamentoInput, type FaturamentoStatus } from "@/lib/faturamentos.query";
 
 const statuses: { value: FaturamentoStatus | "todos"; label: string }[] = [
-  { value: "todos", label: "Todos os status" }, { value: "pendente", label: "Pendente" },
+  { value: "todos", label: "Todos os status" }, { value: "aberto", label: "Em aberto" },
   { value: "pago", label: "Pago" }, { value: "atrasado", label: "Atrasado" }, { value: "cancelado", label: "Cancelado" },
 ];
 const money = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value) || 0);
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
 const currentMonth = () => today().slice(0, 7);
-const blank = { cliente_id: "", assinatura_id: "", competencia: currentMonth(), valor: "", data_vencimento: today(), data_pagamento: "", status: "pendente" as FaturamentoStatus, observacoes: "" };
+const blank = { cliente_id: "", assinatura_id: "", competencia: currentMonth(), valor: "", data_vencimento: today(), data_pagamento: "", status: "aberto" as FaturamentoStatus, observacoes: "" };
 const monthLabel = (value: string) => { if (!value) return "—"; const [y,m] = value.slice(0,7).split("-"); return `${m}/${y}`; };
 
 export function FaturamentoPage() {
@@ -31,7 +31,7 @@ export function FaturamentoPage() {
   const records = recordsQ.data ?? [];
   const rows = useMemo(() => records.filter(f => (filter === "todos" || f.status === filter) && `${f.cliente?.nome ?? ""} ${f.cliente?.empresa ?? ""} ${f.competencia} ${f.assinatura ? "assinatura recorrente" : "avulso"}`.toLowerCase().includes(search.toLowerCase().trim())), [records, filter, search]);
   const paid = records.filter(f => f.status === "pago").reduce((sum,f)=>sum+Number(f.valor),0);
-  const openAmount = records.filter(f => f.status === "pendente" || f.status === "atrasado").reduce((sum,f)=>sum+Number(f.valor),0);
+  const openAmount = records.filter(f => f.status === "aberto" || f.status === "atrasado").reduce((sum,f)=>sum+Number(f.valor),0);
   const overdue = records.filter(f => f.status !== "pago" && f.status !== "cancelado" && f.data_vencimento < today()).length;
   const mutation = useMutation({
     mutationFn: (input: FaturamentoInput) => editing ? atualizarFaturamento(editing.id,input) : criarFaturamento(input),
@@ -62,4 +62,4 @@ export function FaturamentoPage() {
 }
 function Metric({icon,label,value,hint}:{icon:React.ReactNode;label:string;value:string;hint:string}) { return <div className="rounded-xl border border-glass-border bg-surface-glass p-5 shadow-soft"><div className="flex items-center justify-between"><p className="text-sm text-muted-foreground">{label}</p>{icon}</div><p className="mt-3 font-display text-2xl font-bold">{value}</p><p className="mt-1 text-xs text-muted-foreground">{hint}</p></div>; }
 function Field({label,children}:{label:string;children:React.ReactNode}) { return <label className="block space-y-1.5 text-sm font-medium">{label}{children}</label>; }
-function Status({status}:{status:FaturamentoStatus}) { const label=statuses.find(s=>s.value===status)?.label??status; const cls:Record<FaturamentoStatus,string>={pendente:"bg-amber-500/10 text-amber-500",pago:"bg-emerald-500/10 text-emerald-500",atrasado:"bg-destructive/10 text-destructive",cancelado:"bg-muted text-muted-foreground"}; return <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${cls[status]}`}>{label}</span>; }
+function Status({status}:{status:FaturamentoStatus}) { const label=statuses.find(s=>s.value===status)?.label??status; const cls:Record<FaturamentoStatus,string>={aberto:"bg-amber-500/10 text-amber-500",pago:"bg-emerald-500/10 text-emerald-500",atrasado:"bg-destructive/10 text-destructive",cancelado:"bg-muted text-muted-foreground"}; return <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${cls[status]}`}>{label}</span>; }
