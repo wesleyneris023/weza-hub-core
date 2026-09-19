@@ -54,15 +54,14 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
   const today = new Date().toISOString().slice(0, 10);
   const in30Days = dateFromNow(30);
 
-  const [clientes, sites, assinaturas, manutencoes, pendentes, recebidos, atrasados, faturamento, suspensos, vencendo] =
+  const [clientes, sites, assinaturas, manutencoes, naoPagos, recebidos, faturamento, suspensos, vencendo] =
     await Promise.all([
       db.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo"),
       db.from("websites").select("id", { count: "exact", head: true }).eq("status", "ativo"),
       db.from("assinaturas").select("valor, planos(periodo_cobranca)").eq("status", "ativa"),
       db.from("manutencoes").select("id", { count: "exact", head: true }).in("status", ["aberta", "em_andamento"]),
-      db.from("pagamentos").select("valor, data_vencimento").in("status", ["pendente", "atrasado"]),
+      db.from("pagamentos").select("valor, data_vencimento, status").in("status", ["pendente", "atrasado"]),
       db.from("pagamentos").select("valor").eq("status", "pago"),
-      db.from("pagamentos").select("valor, data_vencimento").in("status", ["pendente", "atrasado"]),
       db.from("faturamentos").select("valor").gte("competencia", monthStart)
         .lt("competencia", nextMonthStart).neq("status", "cancelado"),
       db.from("websites").select("id", { count: "exact", head: true }).eq("status", "suspenso"),
@@ -70,7 +69,7 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
         .eq("status", "ativa").gte("proximo_vencimento", today).lte("proximo_vencimento", in30Days),
     ]);
 
-  const queryError = [clientes, sites, assinaturas, manutencoes, pendentes, recebidos, atrasados, faturamento, suspensos, vencendo]
+  const queryError = [clientes, sites, assinaturas, manutencoes, naoPagos, recebidos, faturamento, suspensos, vencendo]
     .map((result) => result.error)
     .find((error) => error !== null);
   if (queryError) {
@@ -87,9 +86,13 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
     return total + (item.planos?.periodo_cobranca === "anual" ? amount / 12 : amount);
   }, 0);
 
-  const paymentRows = (pendentes.data ?? []) as Array<AmountRow & { data_vencimento: string }>;
-  const overdueRows = paymentRows.filter((payment) => payment.data_vencimento < today);
-  const openRows = paymentRows.filter((payment) => payment.data_vencimento >= today);
+  const paymentRows = (naoPagos.data ?? []) as Array<AmountRow & {
+    data_vencimento: string;
+    status: "pendente" | "atrasado";
+  }>;
+  const overdueRows = paymentRows.filter((payment) => payment.status === "atrasado" || payment.data_vencimento < today);
+  const overdueIds = new Set(overdueRows);
+  const openRows = paymentRows.filter((payment) => !overdueIds.has(payment));
   const receivedRows = (recebidos.data ?? []) as AmountRow[];
   const invoiceRows = (faturamento.data ?? []) as AmountRow[];
 
