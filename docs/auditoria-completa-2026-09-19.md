@@ -6,70 +6,72 @@
 
 ## Escopo e limites
 
-Auditoria estática do GitHub, inspeção do schema/policies/advisors do Supabase e validação visual do preview pelo usuário. O preview voltou a abrir e exibir dados após a restauração das variáveis. Foram adicionadas correção de status efetivo de vencimento e automação de qualidade no GitHub Actions. O workflow ainda precisa concluir a primeira execução; lint, typecheck e build não foram verificados localmente nesta auditoria. Auditoria aberta; não declarar pronto para produção.
+Auditoria estática do GitHub, inspeção ao vivo do schema, policies e advisors do Supabase, consultas SQL somente de leitura e validação visual do preview pelo usuário. O preview voltou a abrir após a restauração das variáveis. Os módulos financeiros/operacionais exibem os registros existentes. Isso não substitui testes completos de CRUD e autorização.
 
 ## Incidente crítico — preview falhou após remoção do `.env`
 
 O arquivo `src/integrations/supabase/client.ts` exige `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` e lança erro durante inicialização quando ausentes. A remoção do `.env` do Git foi seguida por falha global em `/auth`; a sequência é compatível com a ausência dessas variáveis e constitui a causa imediata mais provável.
 
-**Mitigação aplicada:** `.env` foi restaurado e houve correção do valor da variável Vite em commits anteriores. O usuário confirmou visualmente que o preview voltou a abrir e que Clientes, Websites, Assinaturas, Pagamentos, Faturamento e Manutenção exibem registros; Vendas abre sem erro e sem registros. Essa confirmação é visual, não substitui build ou testes automatizados.
+**Mitigação aplicada anteriormente:** `.env` restaurado e variável Vite corrigida. O usuário confirmou visualmente que o preview voltou a abrir. Não remover nem alterar `.env` novamente sem configurar e validar variáveis no ambiente de build/preview.
 
-**Risco ainda aberto:** `.env` permanece versionado no repositório para preservar a inicialização atual do preview. A chave vista na cópia inspecionada era publishable/anon, não `service_role`. Não remover o arquivo novamente até configurar e validar as variáveis no ambiente de build/preview. Revisar histórico Git antes de concluir a auditoria de credenciais; nunca expor valores de chaves em logs ou documentação.
+**Risco aberto:** `.env` está versionado. A chave observada na cópia inspecionada era publishable/anon; revisão completa do histórico Git e migração para ambiente seguro ainda pendentes. Nunca expor valores de chaves em logs/documentação. Se algum segredo privilegiado tiver sido versionado, remover do histórico e rotacionar.
 
-## Achados e ações
+## Módulos e vencimento
 
-### Falha de carregamento de módulos — correção visualmente validada, causa original não isolada
+O schema possui FKs simples e compostas para algumas relações. Os selects PostgREST foram explicitados para reduzir ambiguidade em:
+- Pagamentos: `pagamentos_cliente_id_fkey`, `pagamentos_assinatura_id_fkey`.
+- Faturamento: `faturamentos_cliente_id_fkey`, `faturamentos_assinatura_id_fkey`.
+- Manutenção: `manutencoes_cliente_id_fkey`, `manutencoes_website_id_fkey`.
+- Assinaturas: `assinaturas_cliente_id_fkey`, `assinaturas_website_id_fkey`, `assinaturas_plano_id_fkey`.
+- Vendas: `vendas_cliente_id_fkey`, `vendas_website_id_fkey`.
 
-O schema contém FKs simples e compostas apontando para as mesmas tabelas. Os selects PostgREST precisavam indicar a constraint para evitar possível ambiguidade (`PGRST201`). Os selects explícitos foram aplicados em:
-- Pagamentos: `pagamentos_cliente_id_fkey` e `pagamentos_assinatura_id_fkey`.
-- Faturamento: `faturamentos_cliente_id_fkey` e `faturamentos_assinatura_id_fkey`.
-- Manutenção: `manutencoes_cliente_id_fkey` e `manutencoes_website_id_fkey`.
-- Assinaturas: `assinaturas_cliente_id_fkey`, `assinaturas_website_id_fkey` e `assinaturas_plano_id_fkey`.
-- Vendas: `vendas_cliente_id_fkey` e `vendas_website_id_fkey`.
+O usuário confirmou que as páginas carregam. Como também houve incidente de ambiente, a causa original não pode ser atribuída exclusivamente à ambiguidade de relacionamentos.
 
-O usuário confirmou que as páginas voltaram a carregar. Como houve também incidente de ambiente, não é possível atribuir com certeza a causa original somente à ambiguidade dos relacionamentos.
+Pagamentos e Faturamento calculam status efetivo como atrasado quando vencimento é anterior à data local atual e o registro não está pago/cancelado; esse status alimenta filtro, badge e indicadores sem gravar mudança automática. No print de 19/09/2026, ambos venciam naquele dia e apareceram pendentes/em aberto; contador de vencidos = 0 é consistente com a regra. Falta validar o caso após vencimento real no preview.
 
-### Correção aplicada — vencimento efetivo em Pagamentos e Faturamento
+## Banco de dados — inspeção ao vivo
 
-Os dois módulos agora calculam o status exibido: quando o registro não está pago nem cancelado e `data_vencimento` é anterior à data local atual, ele é considerado `atrasado`. O status calculado é usado no filtro, badge, total em aberto e contador de vencidos. A correção é somente de apresentação/cálculo; não grava alteração automática no banco. Aguardando validação visual no preview.
+### Integridade relacional e financeira
 
-### Qualidade/CI — workflow adicionado
+Consultas somente de leitura retornaram **zero inconsistências** nos vínculos:
+- pagamento ↔ assinatura/cliente;
+- faturamento ↔ assinatura/cliente;
+- assinatura ↔ website/cliente;
+- manutenção ↔ website/cliente;
+- venda ↔ website/cliente.
 
-Criado `.github/workflows/quality-checks.yml`, acionado em push para `main` e pull requests para `main`, com etapas de instalação de dependências, ESLint, `tsc --noEmit` e build de produção (Node 22). O repositório não contém `package-lock.json`; por isso o workflow usa `npm install`, não `npm ci`. A primeira execução precisa confirmar se os comandos passam; sem lockfile, a instalação não é estritamente reproduzível.
+Também retornaram zero registros com pagamento/faturamento marcado como pago sem data de pagamento, data de pagamento em status não pago ou valor negativo. Isso é uma fotografia dos dados atuais, não garantia contra futuras gravações incorretas.
 
-### Média — alerta de segurança Supabase
+Contagem observada: 1 cliente, 1 website, 1 plano, 1 assinatura, 1 pagamento, 1 faturamento, 1 manutenção e 0 vendas. Há 1 linha de papel `admin` em `user_roles`; ainda não foi confirmada a correspondência com a conta administrativa usada no preview.
 
-Advisor de segurança consultado em 19/09/2026 reporta **Leaked Password Protection Disabled**. Recomenda-se habilitar a proteção contra senhas comprometidas nas configurações de Auth. A alteração ainda não foi aplicada.
+### RLS e políticas
 
-### Baixa/média — índices
+RLS está habilitado em todas as tabelas públicas de negócio observadas (`user_roles`, `clientes`, `websites`, `planos`, `assinaturas`, `pagamentos`, `manutencoes`, `faturamentos`, `vendas`). Policies para `authenticated` exigem `private.has_role((select auth.uid()), 'admin')`; `user_roles` tem policy de leitura administrativa. O helper `private.has_role` é `SECURITY DEFINER`, com `search_path=public`. Recomenda-se confirmar que referências internas estão qualificadas e restringir EXECUTE ao necessário. Ainda faltam testes de acesso anônimo, usuário comum e admin, incluindo tentativas de acesso cruzado.
 
-Advisor de performance consultado em 19/09/2026 reporta cinco FKs compostas sem índice de cobertura: `assinaturas_website_cliente_fkey`, `faturamentos_assinatura_cliente_fkey`, `manutencoes_website_cliente_fkey`, `pagamentos_assinatura_cliente_fkey` e `vendas_website_cliente_fkey`. Avaliar índices com colunas na mesma ordem da FK e benefício real antes de aplicar. O advisor também sinaliza dez índices não utilizados; não remover sem observar carga representativa.
+### Advisors Supabase (19/09/2026)
 
-## Banco de dados — estado observado
+- **Segurança — WARN:** `Leaked Password Protection Disabled`. Habilitar proteção contra senhas comprometidas nas configurações de Auth: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+- **Performance — INFO:** cinco FKs compostas sem índice de cobertura: `assinaturas_website_cliente_fkey`, `faturamentos_assinatura_cliente_fkey`, `manutencoes_website_cliente_fkey`, `pagamentos_assinatura_cliente_fkey`, `vendas_website_cliente_fkey`. Avaliar índices adequados antes de aplicar.
+- Advisor também lista 10 índices não utilizados. Não remover com base em uso ainda baixo; observar carga representativa primeiro.
 
-As tabelas públicas `user_roles`, `clientes`, `websites`, `planos`, `assinaturas`, `pagamentos`, `manutencoes`, `faturamentos` e `vendas` estão com RLS habilitado. A consulta a `pg_policies` confirmou policies para `authenticated`; gerenciamento exige `private.has_role((select auth.uid()), 'admin')`. `user_roles` permite SELECT administrativo. Isso é uma boa barreira de banco, mas não substitui testes com contas admin/não-admin/anônima. O registro admin existente ainda precisa ser comparado com a conta efetivamente usada no preview, sem expor dados pessoais.
+## CI e qualidade de código
 
-As tabelas têm FKs e restrições que reforçam vínculos entre cliente, website e assinatura. A existência dessas constraints foi confirmada; a validação de fluxos reais de CRUD permanece pendente.
+Workflow `.github/workflows/quality-checks.yml` adicionado para lint, `tsc --noEmit` e build (Node 22). A primeira execução falhou no ESLint: **1.007 erros e 7 warnings**, sendo 995 erros potencialmente corrigíveis com `--fix`; predominam regras `prettier/prettier`, mas também há ocorrências de `no-explicit-any` e `prefer-const`. TypeScript e build foram pulados porque o workflow parava no lint.
 
-Migrações listadas:
-- `20260918011023`
-- `20260918011216`
-- `20260919012458` — `create_vendas_table`
-- `20260919221151` — `optimize_admin_rls_initplan`
-- `20260919221222` — `wrap_auth_uid_in_admin_policies`
-- `20260919221240` — `enforce_client_relationship_integrity`
+O workflow foi atualizado para tentar TypeScript e build mesmo quando o lint falhar. Execução disparada no commit `5ed6a2ae49d5237afc95eacf159b32eb42895297`; resultado ainda não confirmado no momento desta atualização. O repositório não tem `package-lock.json`, portanto o workflow usa `npm install` e não oferece instalação estritamente reproduzível.
 
-## Pendências
+## Pendências prioritárias
 
-1. Confirmar primeira execução do workflow (lint, typecheck e build) e avaliar/adicionar lockfile.
-2. Validar visualmente vencimentos em Pagamentos e Faturamento, incluindo filtro e badges.
-3. Revisar guards e RLS; testar acesso anônimo, não-admin e admin, incluindo acesso cruzado.
-4. Testar CRUD e integridade dos módulos sem dados fictícios em produção.
-5. Conferir datas/timezone, formulários, estados de erro/vazio, responsividade e sincronização Lovable.
-6. Habilitar proteção contra senhas comprometidas; avaliar índices.
-7. Confirmar vínculo da conta admin e recuperação/logout.
-8. Revisar histórico Git para verificar que nenhum segredo privilegiado foi versionado e migrar configuração para ambiente seguro sem derrubar o preview.
+1. Obter resultado da execução CI atual para typecheck e build; reduzir dívida do ESLint sem desativar silenciosamente regras importantes.
+2. Validar status vencido, filtro e badge em Pagamentos/Faturamento quando a data ultrapassar vencimento.
+3. Testar CRUD e relações dos módulos sem criar dados desnecessários em produção.
+4. Testar RLS com usuário anônimo, usuário comum e admin; confirmar vínculo do admin atual.
+5. Revisar função `private.has_role`, grants EXECUTE e segurança do `search_path`.
+6. Habilitar proteção contra senhas comprometidas; avaliar índices compostos após observar carga.
+7. Revisar histórico Git para credenciais e planejar migração segura do `.env` sem derrubar o preview.
+8. Conferir timezone, formulários, estados de erro/vazio, responsividade e sincronização Lovable.
+9. Adicionar lockfile e confirmar dependências/build reprodutíveis.
 
 ## Conclusão provisória
 
-O preview está novamente acessível e o usuário confirmou visualmente o carregamento dos módulos. A correção de vencimentos e o workflow de CI foram enviados, mas aguardam validação automatizada/visual. Permanecem pendentes testes de segurança operacional e validação ponta a ponta. Auditoria **em andamento**; não considerar o WEZA HUB aprovado para produção até fechar as pendências.
+A aplicação voltou a carregar e as relações atuais verificadas não apresentam inconsistências nos dados existentes. RLS está habilitado, mas falta teste de autorização por perfil. CI revelou dívida significativa de formatação/lint; TypeScript e build aguardam execução independente. A auditoria **permanece em andamento**; não considerar o WEZA HUB aprovado para produção até fechar as pendências prioritárias.
