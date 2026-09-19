@@ -26,27 +26,24 @@ async function requireAdminSession() {
   if (error || !data.user) throw new Error("Sua sessão expirou. Entre novamente.");
 }
 
+function throwQueryError(context: string, error: any): never {
+  console.error(`[WEZA HUB] ${context}`, { code: error?.code, message: error?.message, hint: error?.hint });
+  throw new Error(context);
+}
+
 export async function listarAssinaturas(): Promise<AssinaturaListItem[]> {
   await requireAdminSession();
   const { data, error } = await db.from("assinaturas")
-    .select("*, clientes(nome, empresa), websites(nome), planos(nome, periodo_cobranca)")
+    .select("*, cliente:clientes!assinaturas_cliente_id_fkey(nome, empresa), website:websites!assinaturas_website_id_fkey(nome), plano:planos!assinaturas_plano_id_fkey(nome, periodo_cobranca)")
     .order("proximo_vencimento", { ascending: true }).order("created_at", { ascending: false });
-  if (error) throw new Error("Não foi possível carregar as assinaturas.");
-
-  // O PostgREST devolve os relacionamentos com os nomes das tabelas
-  // (clientes/websites/planos). A interface usa os aliases cliente/website/plano.
-  return (data ?? []).map((row: any) => ({
-    ...row,
-    cliente: row.clientes ?? null,
-    website: row.websites ?? null,
-    plano: row.planos ?? null,
-  })) as AssinaturaListItem[];
+  if (error) throwQueryError("Não foi possível carregar as assinaturas.", error);
+  return (data ?? []) as AssinaturaListItem[];
 }
 
 export async function listarPlanos(): Promise<Plano[]> {
   await requireAdminSession();
   const { data, error } = await db.from("planos").select("*").order("nome", { ascending: true });
-  if (error) throw new Error("Não foi possível carregar os planos.");
+  if (error) throwQueryError("Não foi possível carregar os planos.", error);
   return (data ?? []) as Plano[];
 }
 
@@ -54,7 +51,7 @@ export async function listarClientesAssinatura() {
   await requireAdminSession();
   const { data, error } = await db.from("clientes").select("id, nome, empresa, status")
     .eq("status", "ativo").order("nome", { ascending: true });
-  if (error) throw new Error("Não foi possível carregar os clientes.");
+  if (error) throwQueryError("Não foi possível carregar os clientes.", error);
   return data ?? [];
 }
 
@@ -63,31 +60,31 @@ export async function listarWebsitesAssinatura(clienteId?: string) {
   let query = db.from("websites").select("id, nome, cliente_id").order("nome", { ascending: true });
   if (clienteId) query = query.eq("cliente_id", clienteId);
   const { data, error } = await query;
-  if (error) throw new Error("Não foi possível carregar os websites.");
+  if (error) throwQueryError("Não foi possível carregar os websites.", error);
   return data ?? [];
 }
 
 export async function criarPlano(input: PlanoInput): Promise<Plano> {
   await requireAdminSession();
   const { data, error } = await db.from("planos").insert(input).select().single();
-  if (error || !data) throw new Error("Não foi possível criar o plano.");
+  if (error || !data) throwQueryError("Não foi possível criar o plano.", error);
   return data as Plano;
 }
 export async function atualizarPlano(id: string, input: PlanoInput): Promise<Plano> {
   await requireAdminSession();
   const { data, error } = await db.from("planos").update(input).eq("id", id).select().single();
-  if (error || !data) throw new Error("Não foi possível atualizar o plano.");
+  if (error || !data) throwQueryError("Não foi possível atualizar o plano.", error);
   return data as Plano;
 }
 export async function criarAssinatura(input: AssinaturaInput): Promise<Assinatura> {
   await requireAdminSession();
   const { data, error } = await db.from("assinaturas").insert(input).select().single();
-  if (error || !data) throw new Error("Não foi possível criar a assinatura.");
+  if (error || !data) throwQueryError("Não foi possível criar a assinatura.", error);
   return data as Assinatura;
 }
 export async function atualizarAssinatura(id: string, input: AssinaturaInput): Promise<Assinatura> {
   await requireAdminSession();
   const { data, error } = await db.from("assinaturas").update(input).eq("id", id).select().single();
-  if (error || !data) throw new Error("Não foi possível atualizar a assinatura.");
+  if (error || !data) throwQueryError("Não foi possível atualizar a assinatura.", error);
   return data as Assinatura;
 }
