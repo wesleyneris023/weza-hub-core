@@ -20,6 +20,18 @@ async function requireAdminSession() {
   if (error || !data.user) throw new Error("Sua sessão expirou. Entre novamente.");
 }
 
+async function validatePagamentoInput(input: PagamentoInput) {
+  if (!input.cliente_id) throw new Error("Selecione um cliente.");
+  if (!Number.isFinite(Number(input.valor)) || Number(input.valor) < 0) throw new Error("Informe um valor válido.");
+  if (input.status === "pago" && !input.data_pagamento) throw new Error("Informe a data do pagamento.");
+  if (input.status !== "pago" && input.data_pagamento) throw new Error("A data de pagamento só pode ser informada para pagamentos pagos.");
+  if (input.assinatura_id) {
+    const { data, error } = await db.from("assinaturas").select("id, cliente_id").eq("id", input.assinatura_id).maybeSingle();
+    if (error) throw new Error("Não foi possível validar a assinatura selecionada.");
+    if (!data || data.cliente_id !== input.cliente_id) throw new Error("A assinatura selecionada não pertence ao cliente informado.");
+  }
+}
+
 export async function listarPagamentos(): Promise<PagamentoListItem[]> {
   await requireAdminSession();
   const { data, error } = await db.from("pagamentos")
@@ -49,6 +61,7 @@ export async function listarAssinaturasPagamento(clienteId?: string) {
 
 export async function criarPagamento(input: PagamentoInput): Promise<Pagamento> {
   await requireAdminSession();
+  await validatePagamentoInput(input);
   const { data, error } = await db.from("pagamentos").insert(input).select().single();
   if (error || !data) throw new Error("Não foi possível registrar o pagamento.");
   return data as Pagamento;
@@ -56,6 +69,7 @@ export async function criarPagamento(input: PagamentoInput): Promise<Pagamento> 
 
 export async function atualizarPagamento(id: string, input: PagamentoInput): Promise<Pagamento> {
   await requireAdminSession();
+  await validatePagamentoInput(input);
   const { data, error } = await db.from("pagamentos").update(input).eq("id", id).select().single();
   if (error || !data) throw new Error("Não foi possível atualizar o pagamento.");
   return data as Pagamento;
