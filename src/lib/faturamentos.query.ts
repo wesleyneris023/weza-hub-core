@@ -19,6 +19,11 @@ async function requireAdminSession() {
   if (error || !data.user) throw new Error("Sua sessão expirou. Entre novamente.");
 }
 
+function throwQueryError(context: string, error: any): never {
+  console.error(`[WEZA HUB] ${context}`, { code: error?.code, message: error?.message, hint: error?.hint });
+  throw new Error(context);
+}
+
 async function validateFaturamentoInput(input: FaturamentoInput) {
   if (!input.cliente_id) throw new Error("Selecione um cliente.");
   if (!Number.isFinite(Number(input.valor)) || Number(input.valor) < 0) throw new Error("Informe um valor válido.");
@@ -26,7 +31,7 @@ async function validateFaturamentoInput(input: FaturamentoInput) {
   if (input.status !== "pago" && input.data_pagamento) throw new Error("A data de pagamento só pode ser informada para faturamentos pagos.");
   if (input.assinatura_id) {
     const { data, error } = await db.from("assinaturas").select("id, cliente_id").eq("id", input.assinatura_id).maybeSingle();
-    if (error) throw new Error("Não foi possível validar a assinatura selecionada.");
+    if (error) throwQueryError("Não foi possível validar a assinatura selecionada.", error);
     if (!data || data.cliente_id !== input.cliente_id) throw new Error("A assinatura selecionada não pertence ao cliente informado.");
   }
 }
@@ -34,9 +39,9 @@ async function validateFaturamentoInput(input: FaturamentoInput) {
 export async function listarFaturamentos(): Promise<FaturamentoListItem[]> {
   await requireAdminSession();
   const { data, error } = await db.from("faturamentos")
-    .select("*, cliente:clientes(nome, empresa), assinatura:assinaturas(id, status, valor)")
+    .select("*, cliente:clientes!faturamentos_cliente_id_fkey(nome, empresa), assinatura:assinaturas!faturamentos_assinatura_id_fkey(id, status, valor)")
     .order("competencia", { ascending: false }).order("data_vencimento", { ascending: false });
-  if (error) throw new Error("Não foi possível carregar os faturamentos.");
+  if (error) throwQueryError("Não foi possível carregar os faturamentos.", error);
   return (data ?? []) as FaturamentoListItem[];
 }
 
@@ -44,7 +49,7 @@ export async function listarClientesFaturamento() {
   await requireAdminSession();
   const { data, error } = await db.from("clientes").select("id, nome, empresa, status")
     .eq("status", "ativo").order("nome", { ascending: true });
-  if (error) throw new Error("Não foi possível carregar os clientes.");
+  if (error) throwQueryError("Não foi possível carregar os clientes.", error);
   return data ?? [];
 }
 
@@ -54,7 +59,7 @@ export async function listarAssinaturasFaturamento(clienteId?: string) {
     .order("proximo_vencimento", { ascending: true });
   if (clienteId) query = query.eq("cliente_id", clienteId);
   const { data, error } = await query;
-  if (error) throw new Error("Não foi possível carregar as assinaturas.");
+  if (error) throwQueryError("Não foi possível carregar as assinaturas.", error);
   return data ?? [];
 }
 
@@ -62,7 +67,7 @@ export async function criarFaturamento(input: FaturamentoInput): Promise<Faturam
   await requireAdminSession();
   await validateFaturamentoInput(input);
   const { data, error } = await db.from("faturamentos").insert(input).select().single();
-  if (error || !data) throw new Error("Não foi possível registrar o faturamento.");
+  if (error || !data) throwQueryError("Não foi possível registrar o faturamento.", error);
   return data as Faturamento;
 }
 
@@ -70,6 +75,6 @@ export async function atualizarFaturamento(id: string, input: FaturamentoInput):
   await requireAdminSession();
   await validateFaturamentoInput(input);
   const { data, error } = await db.from("faturamentos").update(input).eq("id", id).select().single();
-  if (error || !data) throw new Error("Não foi possível atualizar o faturamento.");
+  if (error || !data) throwQueryError("Não foi possível atualizar o faturamento.", error);
   return data as Faturamento;
 }
