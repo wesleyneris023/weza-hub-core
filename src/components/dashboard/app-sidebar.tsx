@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 interface NavItem {
   label: string;
   icon: ComponentType<{ className?: string }>;
-  to?: "/dashboard" | "/clientes" | "/websites" | "/vendas" | "/assinaturas";
+  to?: "/dashboard" | "/clientes" | "/websites" | "/vendas" | "/assinaturas" | "/pagamentos";
 }
 
 const managementItems: NavItem[] = [
@@ -27,7 +27,7 @@ const managementItems: NavItem[] = [
   { label: "Websites", icon: Globe2, to: "/websites" },
   { label: "Vendas", icon: ShoppingBag, to: "/vendas" },
   { label: "Assinaturas", icon: RefreshCcw, to: "/assinaturas" },
-  { label: "Pagamentos", icon: CreditCard },
+  { label: "Pagamentos", icon: CreditCard, to: "/pagamentos" },
   { label: "Manutenção", icon: Wrench },
   { label: "Faturamento", icon: ReceiptText },
 ];
