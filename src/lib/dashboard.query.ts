@@ -7,11 +7,15 @@ export interface DashboardMetrics {
   receitaMensal: number;
   manutencoesAbertas: number;
   pagamentosPendentes: number;
+  pagamentosPendentesValor: number;
+  pagamentosRecebidos: number;
+  pagamentosRecebidosValor: number;
   pagamentosAtrasados: number;
   faturamentoMes: number;
   mrr: number;
   inadimplencia: number;
   sitesSuspensos: number;
+  assinaturasVencendo30Dias: number;
 }
 
 interface AmountRow {
@@ -25,6 +29,12 @@ function firstDayOfMonth(): string {
     .slice(0, 10);
 }
 
+function daysFromNow(days: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
 function sumAmounts(rows: AmountRow[] | null): number {
   return (rows ?? []).reduce((sum, item) => sum + Number(item.valor), 0);
 }
@@ -36,19 +46,25 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
   }
 
   const monthStart = firstDayOfMonth();
-  const [clientes, sites, assinaturas, manutencoes, pendentes, atrasados, faturamento, suspensos] =
+  const today = new Date().toISOString().slice(0, 10);
+  const in30Days = daysFromNow(30);
+
+  const [clientes, sites, assinaturas, manutencoes, pendentes, recebidos, atrasados, faturamento, suspensos, vencendo] =
     await Promise.all([
       supabase.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo"),
       supabase.from("websites").select("id", { count: "exact", head: true }).eq("status", "ativo"),
       supabase.from("assinaturas").select("valor").eq("status", "ativa"),
       supabase.from("manutencoes").select("id", { count: "exact", head: true }).in("status", ["aberta", "em_andamento"]),
-      supabase.from("pagamentos").select("id", { count: "exact", head: true }).eq("status", "pendente"),
+      supabase.from("pagamentos").select("valor").eq("status", "pendente"),
+      supabase.from("pagamentos").select("valor").eq("status", "pago"),
       supabase.from("pagamentos").select("valor").eq("status", "atrasado"),
       supabase.from("faturamentos").select("valor").gte("competencia", monthStart).neq("status", "cancelado"),
       supabase.from("websites").select("id", { count: "exact", head: true }).eq("status", "suspenso"),
+      supabase.from("assinaturas").select("id", { count: "exact", head: true })
+        .eq("status", "ativa").gte("proximo_vencimento", today).lte("proximo_vencimento", in30Days),
     ]);
 
-  const queryError = [clientes, sites, assinaturas, manutencoes, pendentes, atrasados, faturamento, suspensos]
+  const queryError = [clientes, sites, assinaturas, manutencoes, pendentes, recebidos, atrasados, faturamento, suspensos, vencendo]
     .map((result) => result.error)
     .find((error) => error !== null);
   if (queryError) {
@@ -64,11 +80,15 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
     assinaturasAtivas: assinaturas.data?.length ?? 0,
     receitaMensal,
     manutencoesAbertas: manutencoes.count ?? 0,
-    pagamentosPendentes: pendentes.count ?? 0,
+    pagamentosPendentes: pendentes.data?.length ?? 0,
+    pagamentosPendentesValor: sumAmounts(pendentes.data),
+    pagamentosRecebidos: recebidos.data?.length ?? 0,
+    pagamentosRecebidosValor: sumAmounts(recebidos.data),
     pagamentosAtrasados: atrasados.data?.length ?? 0,
     faturamentoMes: sumAmounts(faturamento.data),
     mrr: receitaMensal,
     inadimplencia,
     sitesSuspensos: suspensos.count ?? 0,
+    assinaturasVencendo30Dias: vencendo.count ?? 0,
   };
 }
