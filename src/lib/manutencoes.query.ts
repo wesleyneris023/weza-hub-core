@@ -25,7 +25,7 @@ export type ManutencaoListItem = Manutencao & {
 };
 
 export type ManutencaoInput = Pick<Manutencao,
-  "cliente_id" | "website_id" | "titulo" | "descricao" | "tipo" | "status" | "prioridade" | "data_conclusao" | "observacoes"
+  "cliente_id" | "website_id" | "titulo" | "descricao" | "tipo" | "status" | "prioridade" | "data_abertura" | "data_conclusao" | "observacoes"
 >;
 
 export const manutencoesQueryKey = ["manutencoes"] as const;
