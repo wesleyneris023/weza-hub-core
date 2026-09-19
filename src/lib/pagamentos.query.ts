@@ -20,6 +20,11 @@ async function requireAdminSession() {
   if (error || !data.user) throw new Error("Sua sessão expirou. Entre novamente.");
 }
 
+function throwQueryError(context: string, error: any): never {
+  console.error(`[WEZA HUB] ${context}`, { code: error?.code, message: error?.message, hint: error?.hint });
+  throw new Error(context);
+}
+
 async function validatePagamentoInput(input: PagamentoInput) {
   if (!input.cliente_id) throw new Error("Selecione um cliente.");
   if (!Number.isFinite(Number(input.valor)) || Number(input.valor) < 0) throw new Error("Informe um valor válido.");
@@ -27,7 +32,7 @@ async function validatePagamentoInput(input: PagamentoInput) {
   if (input.status !== "pago" && input.data_pagamento) throw new Error("A data de pagamento só pode ser informada para pagamentos pagos.");
   if (input.assinatura_id) {
     const { data, error } = await db.from("assinaturas").select("id, cliente_id").eq("id", input.assinatura_id).maybeSingle();
-    if (error) throw new Error("Não foi possível validar a assinatura selecionada.");
+    if (error) throwQueryError("Não foi possível validar a assinatura selecionada.", error);
     if (!data || data.cliente_id !== input.cliente_id) throw new Error("A assinatura selecionada não pertence ao cliente informado.");
   }
 }
@@ -35,9 +40,9 @@ async function validatePagamentoInput(input: PagamentoInput) {
 export async function listarPagamentos(): Promise<PagamentoListItem[]> {
   await requireAdminSession();
   const { data, error } = await db.from("pagamentos")
-    .select("*, cliente:clientes(nome, empresa), assinatura:assinaturas(id, status)")
+    .select("*, cliente:clientes!pagamentos_cliente_id_fkey(nome, empresa), assinatura:assinaturas!pagamentos_assinatura_id_fkey(id, status)")
     .order("data_vencimento", { ascending: false }).order("created_at", { ascending: false });
-  if (error) throw new Error("Não foi possível carregar os pagamentos.");
+  if (error) throwQueryError("Não foi possível carregar os pagamentos.", error);
   return (data ?? []) as PagamentoListItem[];
 }
 
@@ -45,7 +50,7 @@ export async function listarClientesPagamento() {
   await requireAdminSession();
   const { data, error } = await db.from("clientes").select("id, nome, empresa, status")
     .eq("status", "ativo").order("nome", { ascending: true });
-  if (error) throw new Error("Não foi possível carregar os clientes.");
+  if (error) throwQueryError("Não foi possível carregar os clientes.", error);
   return data ?? [];
 }
 
@@ -55,7 +60,7 @@ export async function listarAssinaturasPagamento(clienteId?: string) {
     .order("proximo_vencimento", { ascending: true });
   if (clienteId) query = query.eq("cliente_id", clienteId);
   const { data, error } = await query;
-  if (error) throw new Error("Não foi possível carregar as assinaturas.");
+  if (error) throwQueryError("Não foi possível carregar as assinaturas.", error);
   return data ?? [];
 }
 
@@ -63,7 +68,7 @@ export async function criarPagamento(input: PagamentoInput): Promise<Pagamento> 
   await requireAdminSession();
   await validatePagamentoInput(input);
   const { data, error } = await db.from("pagamentos").insert(input).select().single();
-  if (error || !data) throw new Error("Não foi possível registrar o pagamento.");
+  if (error || !data) throwQueryError("Não foi possível registrar o pagamento.", error);
   return data as Pagamento;
 }
 
@@ -71,6 +76,6 @@ export async function atualizarPagamento(id: string, input: PagamentoInput): Pro
   await requireAdminSession();
   await validatePagamentoInput(input);
   const { data, error } = await db.from("pagamentos").update(input).eq("id", id).select().single();
-  if (error || !data) throw new Error("Não foi possível atualizar o pagamento.");
+  if (error || !data) throwQueryError("Não foi possível atualizar o pagamento.", error);
   return data as Pagamento;
 }
