@@ -13,7 +13,7 @@ function Detail({ label, value }: { label: string; value?: string | null }) {
 
 export interface ClienteDetailsSheetProps {
   open: boolean;
-  cliente?: ClienteDetail;
+  cliente?: ClienteDetail | undefined;
   isLoading: boolean;
   onOpenChange: (open: boolean) => void;
 }

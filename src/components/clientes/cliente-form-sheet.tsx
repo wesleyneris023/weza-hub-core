@@ -45,7 +45,7 @@ function optional(value: string): string | null {
 
 export interface ClienteFormSheetProps {
   open: boolean;
-  cliente?: Cliente;
+  cliente?: Cliente | undefined;
   isSaving: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (input: ClienteInput) => Promise<void>;

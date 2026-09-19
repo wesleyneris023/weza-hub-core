@@ -5,8 +5,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import type { ClienteListItem, ClienteRelatedCounts } from "@/lib/clientes.query";
 
 export interface DeleteClienteDialogProps {
-  cliente?: ClienteListItem;
-  related?: ClienteRelatedCounts;
+  cliente?: ClienteListItem | undefined;
+  related?: ClienteRelatedCounts | undefined;
   checking: boolean;
   deleting: boolean;
   onOpenChange: (open: boolean) => void;

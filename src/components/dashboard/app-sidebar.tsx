@@ -19,11 +19,11 @@ import { cn } from "@/lib/utils";
 interface NavItem {
   label: string;
   icon: ComponentType<{ className?: string }>;
-  available?: boolean;
+  to?: "/dashboard" | "/clientes";
 }
 
 const managementItems: NavItem[] = [
-  { label: "Clientes", icon: Users },
+  { label: "Clientes", icon: Users, to: "/clientes" },
   { label: "Websites", icon: Globe2 },
   { label: "Vendas", icon: ShoppingBag },
   { label: "Assinaturas", icon: RefreshCcw },
@@ -52,13 +52,12 @@ function Brand() {
 
 function NavigationItem({ item }: { item: NavItem }) {
   const Icon = item.icon;
-  if (item.available) {
+  if (item.to) {
     return (
       <Link
-        to="/dashboard"
+        to={item.to}
         activeOptions={{ exact: true }}
-        className="flex h-10 items-center gap-3 rounded-lg bg-surface-strong px-3 text-sm font-semibold text-foreground shadow-soft ring-1 ring-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        aria-current="page"
+        className="flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-soft hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary [&.active]:bg-surface-strong [&.active]:font-semibold [&.active]:text-foreground [&.active]:shadow-soft [&.active]:ring-1 [&.active]:ring-primary/15"
       >
         <Icon className="size-4 text-primary" />
         <span>{item.label}</span>
@@ -81,7 +80,7 @@ function NavigationItem({ item }: { item: NavItem }) {
 }
 
 export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
-  const dashboard: NavItem = { label: "Dashboard", icon: LayoutDashboard, available: true };
+  const dashboard: NavItem = { label: "Dashboard", icon: LayoutDashboard, to: "/dashboard" };
 
   return (
     <>
