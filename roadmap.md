@@ -52,3 +52,14 @@
 - [x] Adicionar rota autenticada `/pagamentos` e habilitar navegação.
 - [ ] Validar geração automática da rota, build, relacionamento cliente/assinatura e fluxos CRUD no preview autenticado.
 - [ ] Definir conciliação com faturamentos e automatizações apenas após validar os fluxos financeiros.
+
+## Módulo Faturamento
+
+- [x] Auditar e reutilizar `public.faturamentos`, já existente, com vínculo obrigatório a cliente e opcional a assinatura; sem migration ou dados fictícios.
+- [x] Confirmar RLS habilitado com policy administrativa para operações autenticadas.
+- [x] Confirmar implementação existente de consultas autenticadas para listar, cadastrar e editar faturamentos.
+- [x] Confirmar tela existente com indicadores, busca, filtro por status, estado vazio e formulário de cadastro/edição.
+- [ ] Validar rota `/faturamento`, navegação, geração automática de rota e build no preview autenticado.
+- [ ] Testar CRUD com registros reais de teste autorizados, vínculo cliente/assinatura, datas e status de pagamento.
+- [ ] Revisar regra de vencimento: registros abertos com data passada devem ser exibidos/filtrados coerentemente como atrasados, sem criar cobranças automáticas.
+- [ ] Definir conciliação entre faturamento e pagamentos antes de automatizar lançamentos.
