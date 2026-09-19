@@ -6,7 +6,7 @@
 
 ## Escopo e limites
 
-Auditoria estática do GitHub, inspeção do schema/policies/advisors do Supabase e validação visual do preview pelo usuário. O preview voltou a abrir e exibir dados após a restauração das variáveis. Build, lint, testes automatizados e testes completos de autorização/CRUD ainda não foram executados. Auditoria aberta; não declarar pronto para produção.
+Auditoria estática do GitHub, inspeção do schema/policies/advisors do Supabase e validação visual do preview pelo usuário. O preview voltou a abrir e exibir dados após a restauração das variáveis. Foram adicionadas correção de status efetivo de vencimento e automação de qualidade no GitHub Actions. O workflow ainda precisa concluir a primeira execução; lint, typecheck e build não foram verificados localmente nesta auditoria. Auditoria aberta; não declarar pronto para produção.
 
 ## Incidente crítico — preview falhou após remoção do `.env`
 
@@ -29,9 +29,13 @@ O schema contém FKs simples e compostas apontando para as mesmas tabelas. Os se
 
 O usuário confirmou que as páginas voltaram a carregar. Como houve também incidente de ambiente, não é possível atribuir com certeza a causa original somente à ambiguidade dos relacionamentos.
 
-### Média — vencimento não é normalizado na listagem financeira
+### Correção aplicada — vencimento efetivo em Pagamentos e Faturamento
 
-Pagamentos e Faturamento ainda filtram/exibem o status persistido diretamente. Indicadores calculam vencimentos separadamente, podendo divergir da badge e do filtro “Atrasado”. Pendente: derivar status efetivo de itens não pagos/não cancelados com vencimento anterior à data local, usando a regra em filtro, badge e valores em aberto, sem gravar automaticamente no banco.
+Os dois módulos agora calculam o status exibido: quando o registro não está pago nem cancelado e `data_vencimento` é anterior à data local atual, ele é considerado `atrasado`. O status calculado é usado no filtro, badge, total em aberto e contador de vencidos. A correção é somente de apresentação/cálculo; não grava alteração automática no banco. Aguardando validação visual no preview.
+
+### Qualidade/CI — workflow adicionado
+
+Criado `.github/workflows/quality-checks.yml`, acionado em push para `main` e pull requests para `main`, com etapas de instalação de dependências, ESLint, `tsc --noEmit` e build de produção (Node 22). O repositório não contém `package-lock.json`; por isso o workflow usa `npm install`, não `npm ci`. A primeira execução precisa confirmar se os comandos passam; sem lockfile, a instalação não é estritamente reproduzível.
 
 ### Média — alerta de segurança Supabase
 
@@ -40,10 +44,6 @@ Advisor de segurança consultado em 19/09/2026 reporta **Leaked Password Protect
 ### Baixa/média — índices
 
 Advisor de performance consultado em 19/09/2026 reporta cinco FKs compostas sem índice de cobertura: `assinaturas_website_cliente_fkey`, `faturamentos_assinatura_cliente_fkey`, `manutencoes_website_cliente_fkey`, `pagamentos_assinatura_cliente_fkey` e `vendas_website_cliente_fkey`. Avaliar índices com colunas na mesma ordem da FK e benefício real antes de aplicar. O advisor também sinaliza dez índices não utilizados; não remover sem observar carga representativa.
-
-### Qualidade/CI — validação automatizada ausente
-
-O `package.json` contém scripts `dev`, `build`, `build:dev`, `preview`, `lint` e `format`, mas não define script dedicado de `typecheck` ou `test`. A consulta às execuções do GitHub Actions retornou zero workflows. Assim, não há evidência de build/lint automatizados após os commits recentes.
 
 ## Banco de dados — estado observado
 
@@ -61,16 +61,15 @@ Migrações listadas:
 
 ## Pendências
 
-1. Executar instalação reproduzível, lint, typecheck e build.
-2. Corrigir status efetivo de vencimento em Pagamentos e Faturamento.
+1. Confirmar primeira execução do workflow (lint, typecheck e build) e avaliar/adicionar lockfile.
+2. Validar visualmente vencimentos em Pagamentos e Faturamento, incluindo filtro e badges.
 3. Revisar guards e RLS; testar acesso anônimo, não-admin e admin, incluindo acesso cruzado.
 4. Testar CRUD e integridade dos módulos sem dados fictícios em produção.
 5. Conferir datas/timezone, formulários, estados de erro/vazio, responsividade e sincronização Lovable.
 6. Habilitar proteção contra senhas comprometidas; avaliar índices.
 7. Confirmar vínculo da conta admin e recuperação/logout.
 8. Revisar histórico Git para verificar que nenhum segredo privilegiado foi versionado e migrar configuração para ambiente seguro sem derrubar o preview.
-9. Adicionar pipeline de CI para lint, typecheck e build.
 
 ## Conclusão provisória
 
-O preview está novamente acessível e o usuário confirmou visualmente o carregamento dos módulos. Permanecem pendentes build/lint/testes, ajustes financeiros, revisão de segurança operacional e validação ponta a ponta. Auditoria **em andamento**; não considerar o WEZA HUB aprovado para produção até fechar as pendências.
+O preview está novamente acessível e o usuário confirmou visualmente o carregamento dos módulos. A correção de vencimentos e o workflow de CI foram enviados, mas aguardam validação automatizada/visual. Permanecem pendentes testes de segurança operacional e validação ponta a ponta. Auditoria **em andamento**; não considerar o WEZA HUB aprovado para produção até fechar as pendências.
