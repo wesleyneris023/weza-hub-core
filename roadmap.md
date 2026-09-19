@@ -1,10 +1,19 @@
 # Roadmap
 
-- [x] Apresentar a migration das 7 tabelas e a política de segurança para aprovação.
-- [x] Após aprovação, aplicar a migration no Supabase conectado, sem dados fictícios.
-- [x] Após a migration, conectar os indicadores existentes aos dados reais sem alterar o visual.
-- [x] Validar RLS, banco vazio, rota protegida e tela de acesso.
-- [ ] Vincular uma conta Supabase existente ao papel `admin` e validar os indicadores autenticados — bloqueado até existir ou ser indicada uma conta real.
+## Auditoria técnica inicial — 19/09/2026
+
+- [x] Conferir estrutura real do Supabase: 8 tabelas administrativas presentes, todas com RLS habilitado.
+- [x] Conferir políticas: operações administrativas nas tabelas de negócio exigem `authenticated` + `private.has_role(auth.uid(), 'admin')`.
+- [x] Conferir função `private.has_role`: `SECURITY DEFINER`, consulta restrita à tabela `public.user_roles`.
+- [x] Conferir integridade dos vínculos existentes: nenhuma divergência encontrada entre cliente/website/assinatura em vendas, manutenção, pagamentos e faturamentos.
+- [x] Conferir registros sem alterar ou inserir dados: clientes 1, websites 1, vendas 0, assinaturas 1, pagamentos 1, faturamentos 1, manutenções 1. Há registros de validação existentes; foram preservados.
+- [ ] Confirmar que o usuário autenticado no preview corresponde ao único papel `admin` existente; ainda não validado ponta a ponta.
+- [ ] Corrigir/validar vencimento derivado: registros não pagos com vencimento anterior à data atual devem aparecer como atrasados nos indicadores, filtros e badges, sem modificar automaticamente o banco.
+- [ ] Validar os vínculos de cliente com assinatura/website no formulário e reforçar integridade no banco quando a abordagem estiver definida.
+- [ ] Executar build/lint e validar rotas/CRUD no ambiente da aplicação; a leitura do GitHub/Supabase não executa o projeto.
+- [ ] Revisar alerta Supabase de proteção contra senhas vazadas desabilitada e habilitar no painel Auth após aprovação/configuração.
+- [ ] Revisar os 9 alertas de performance de RLS (`auth.uid()` reavaliado por linha) e otimizar políticas com migration após revisão.
+- [ ] Revisar o arquivo `.env` rastreado no repositório público. Confirmar o conteúdo sem expor valores; se contiver credenciais, removê-lo do histórico conforme necessário e rotacionar as chaves.
 
 ## Busca rápida global
 
