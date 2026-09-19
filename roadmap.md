@@ -6,6 +6,12 @@
 - [x] Validar RLS, banco vazio, rota protegida e tela de acesso.
 - [ ] Vincular uma conta Supabase existente ao papel `admin` e validar os indicadores autenticados — bloqueado até existir ou ser indicada uma conta real.
 
+## Busca rápida global
+
+- [x] Substituir o selo “Em breve” por busca rápida funcional de módulos e páginas no cabeçalho.
+- [x] Adicionar filtragem por nome/descrição e navegação direta para as rotas autenticadas existentes.
+- [ ] Validar visualmente no preview desktop e responsivo.
+
 ## Módulo Clientes
 
 - [x] Criar rota autenticada e navegação para Clientes sem alterar o visual global.
@@ -50,7 +56,7 @@
 - [x] Criar consultas autenticadas para listar, cadastrar e editar pagamentos, além de carregar clientes e assinaturas.
 - [x] Criar tela com indicadores, busca, filtro por status, estado vazio e formulário de cadastro/edição.
 - [x] Adicionar rota autenticada `/pagamentos` e habilitar navegação.
-- [ ] Validar geração automática da rota, build, relacionamento cliente/assinatura e fluxos CRUD no preview autenticado.
+- [ ] Validar geração automática da rota, build, permissões RLS e fluxos CRUD no preview autenticado.
 - [ ] Definir conciliação com faturamentos e automatizações apenas após validar os fluxos financeiros.
 
 ## Módulo Faturamento
