@@ -13,3 +13,12 @@
 - [x] Implementar cadastro, edição, detalhe e exclusão protegida.
 - [x] Integrar notificações e invalidação do indicador de clientes ativos.
 - [x] Validar estados, segurança, responsividade e fluxo público sem dados fictícios.
+
+## Módulo Websites
+
+- [x] Criar camada de consultas autenticadas reutilizando `public.websites` e `public.clientes` existentes.
+- [x] Implementar listagem paginada, pesquisa, filtro por status e indicadores da página atual.
+- [x] Implementar cadastro e edição com vínculo a cliente existente, domínio, plataforma, hospedagem e datas.
+- [x] Adicionar rota autenticada `/websites` e habilitar item correspondente na navegação.
+- [ ] Validar geração automática da rota, build, permissões RLS e fluxos CRUD no preview autenticado.
+- [ ] Revisar os indicadores para totais globais e vencimentos, após validação funcional.
