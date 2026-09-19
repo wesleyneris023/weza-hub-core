@@ -32,3 +32,13 @@
 - [x] Adicionar rota autenticada `/vendas` e habilitar navegação.
 - [ ] Atualizar/validar tipos gerados, build, rota automática e fluxos CRUD no preview autenticado.
 - [ ] Confirmar a associação correta entre venda fechada, pagamento e faturamento antes de automatizar lançamentos financeiros.
+
+## Módulo Assinaturas e Planos
+
+- [x] Auditar e reutilizar `public.assinaturas` e `public.planos` existentes; sem migration ou dados fictícios.
+- [x] Criar consultas autenticadas para listar/cadastrar/editar planos e assinaturas.
+- [x] Criar tela com abas de Assinaturas e Planos, indicadores, pesquisa, filtros e estados vazios.
+- [x] Criar formulários de plano e assinatura, incluindo vínculo a cliente, website e plano existentes.
+- [x] Adicionar rota autenticada `/assinaturas` e habilitar navegação.
+- [ ] Validar geração automática da rota, build, permissões RLS e fluxos CRUD no preview autenticado.
+- [ ] Revisar o cálculo de receita recorrente e definir o vínculo financeiro com pagamentos/faturamentos antes de automatizar cobranças.
