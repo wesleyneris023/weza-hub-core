@@ -19,24 +19,29 @@ export interface DashboardMetrics {
 }
 
 interface AmountRow {
-  valor: number;
+  valor: number | string;
 }
 
-function firstDayOfMonth(): string {
+const db = supabase as any;
+
+function monthRange(): { start: string; endExclusive: string } {
   const now = new Date();
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
-    .toISOString()
-    .slice(0, 10);
+  const start = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
+  const end = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1));
+  return {
+    start: start.toISOString().slice(0, 10),
+    endExclusive: end.toISOString().slice(0, 10),
+  };
 }
 
-function daysFromNow(days: number): string {
+function dateFromNow(days: number): string {
   const date = new Date();
   date.setDate(date.getDate() + days);
   return date.toISOString().slice(0, 10);
 }
 
 function sumAmounts(rows: AmountRow[] | null): number {
-  return (rows ?? []).reduce((sum, item) => sum + Number(item.valor), 0);
+  return (rows ?? []).reduce((sum, item) => sum + Number(item.valor || 0), 0);
 }
 
 export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
@@ -45,22 +50,23 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
     throw new Error("Sua sessão expirou. Entre novamente para carregar o painel.");
   }
 
-  const monthStart = firstDayOfMonth();
+  const { start: monthStart, endExclusive: nextMonthStart } = monthRange();
   const today = new Date().toISOString().slice(0, 10);
-  const in30Days = daysFromNow(30);
+  const in30Days = dateFromNow(30);
 
   const [clientes, sites, assinaturas, manutencoes, pendentes, recebidos, atrasados, faturamento, suspensos, vencendo] =
     await Promise.all([
-      supabase.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo"),
-      supabase.from("websites").select("id", { count: "exact", head: true }).eq("status", "ativo"),
-      supabase.from("assinaturas").select("valor").eq("status", "ativa"),
-      supabase.from("manutencoes").select("id", { count: "exact", head: true }).in("status", ["aberta", "em_andamento"]),
-      supabase.from("pagamentos").select("valor").eq("status", "pendente"),
-      supabase.from("pagamentos").select("valor").eq("status", "pago"),
-      supabase.from("pagamentos").select("valor").eq("status", "atrasado"),
-      supabase.from("faturamentos").select("valor").gte("competencia", monthStart).neq("status", "cancelado"),
-      supabase.from("websites").select("id", { count: "exact", head: true }).eq("status", "suspenso"),
-      supabase.from("assinaturas").select("id", { count: "exact", head: true })
+      db.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo"),
+      db.from("websites").select("id", { count: "exact", head: true }).eq("status", "ativo"),
+      db.from("assinaturas").select("valor, planos(periodo_cobranca)").eq("status", "ativa"),
+      db.from("manutencoes").select("id", { count: "exact", head: true }).in("status", ["aberta", "em_andamento"]),
+      db.from("pagamentos").select("valor, data_vencimento").in("status", ["pendente", "atrasado"]),
+      db.from("pagamentos").select("valor").eq("status", "pago"),
+      db.from("pagamentos").select("valor, data_vencimento").in("status", ["pendente", "atrasado"]),
+      db.from("faturamentos").select("valor").gte("competencia", monthStart)
+        .lt("competencia", nextMonthStart).neq("status", "cancelado"),
+      db.from("websites").select("id", { count: "exact", head: true }).eq("status", "suspenso"),
+      db.from("assinaturas").select("id", { count: "exact", head: true })
         .eq("status", "ativa").gte("proximo_vencimento", today).lte("proximo_vencimento", in30Days),
     ]);
 
@@ -71,23 +77,36 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
     throw new Error(`Não foi possível carregar os indicadores: ${queryError.message}`);
   }
 
-  const receitaMensal = sumAmounts(assinaturas.data);
-  const inadimplencia = sumAmounts(atrasados.data);
+  const activeSubscriptions = (assinaturas.data ?? []) as Array<{
+    valor: number | string;
+    planos: { periodo_cobranca: "mensal" | "anual" } | null;
+  }>;
+  // Normaliza cobranças anuais para equivalência mensal (MRR).
+  const receitaMensal = activeSubscriptions.reduce((total, item) => {
+    const amount = Number(item.valor || 0);
+    return total + (item.planos?.periodo_cobranca === "anual" ? amount / 12 : amount);
+  }, 0);
+
+  const paymentRows = (pendentes.data ?? []) as Array<AmountRow & { data_vencimento: string }>;
+  const overdueRows = paymentRows.filter((payment) => payment.data_vencimento < today);
+  const openRows = paymentRows.filter((payment) => payment.data_vencimento >= today);
+  const receivedRows = (recebidos.data ?? []) as AmountRow[];
+  const invoiceRows = (faturamento.data ?? []) as AmountRow[];
 
   return {
     clientesAtivos: clientes.count ?? 0,
     sitesAtivos: sites.count ?? 0,
-    assinaturasAtivas: assinaturas.data?.length ?? 0,
+    assinaturasAtivas: activeSubscriptions.length,
     receitaMensal,
     manutencoesAbertas: manutencoes.count ?? 0,
-    pagamentosPendentes: pendentes.data?.length ?? 0,
-    pagamentosPendentesValor: sumAmounts(pendentes.data),
-    pagamentosRecebidos: recebidos.data?.length ?? 0,
-    pagamentosRecebidosValor: sumAmounts(recebidos.data),
-    pagamentosAtrasados: atrasados.data?.length ?? 0,
-    faturamentoMes: sumAmounts(faturamento.data),
+    pagamentosPendentes: openRows.length,
+    pagamentosPendentesValor: sumAmounts(openRows),
+    pagamentosRecebidos: receivedRows.length,
+    pagamentosRecebidosValor: sumAmounts(receivedRows),
+    pagamentosAtrasados: overdueRows.length,
+    faturamentoMes: sumAmounts(invoiceRows),
     mrr: receitaMensal,
-    inadimplencia,
+    inadimplencia: sumAmounts(overdueRows),
     sitesSuspensos: suspensos.count ?? 0,
     assinaturasVencendo30Dias: vencendo.count ?? 0,
   };
