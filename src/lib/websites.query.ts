@@ -79,7 +79,6 @@ export async function listarClientesParaWebsite(): Promise<
   const { data, error } = await supabase
     .from("clientes")
     .select("id, nome, empresa, status")
-    .eq("status", "ativo")
     .order("nome", { ascending: true });
   if (error) throw new Error("Não foi possível carregar os clientes.");
   return data ?? [];
