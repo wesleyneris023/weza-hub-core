@@ -16,12 +16,17 @@ async function requireAdminSession() {
   if (error || !data.user) throw new Error("Sua sessão expirou. Entre novamente.");
 }
 
+function throwQueryError(context: string, error: any): never {
+  console.error(`[WEZA HUB] ${context}`, { code: error?.code, message: error?.message, hint: error?.hint });
+  throw new Error(context);
+}
+
 export async function listarVendas(): Promise<VendaListItem[]> {
   await requireAdminSession();
   const { data, error } = await db.from("vendas")
-    .select("*, clientes(nome, empresa), websites(nome)")
+    .select("*, cliente:clientes!vendas_cliente_id_fkey(nome, empresa), website:websites!vendas_website_id_fkey(nome)")
     .order("data_venda", { ascending: false }).order("created_at", { ascending: false });
-  if (error) throw new Error("Não foi possível carregar as vendas.");
+  if (error) throwQueryError("Não foi possível carregar as vendas.", error);
   return (data ?? []) as VendaListItem[];
 }
 
@@ -29,7 +34,7 @@ export async function listarClientesVenda() {
   await requireAdminSession();
   const { data, error } = await db.from("clientes").select("id, nome, empresa, status")
     .eq("status", "ativo").order("nome", { ascending: true });
-  if (error) throw new Error("Não foi possível carregar os clientes.");
+  if (error) throwQueryError("Não foi possível carregar os clientes.", error);
   return data ?? [];
 }
 
@@ -38,20 +43,20 @@ export async function listarWebsitesVenda(clienteId?: string) {
   let query = db.from("websites").select("id, nome, cliente_id").order("nome", { ascending: true });
   if (clienteId) query = query.eq("cliente_id", clienteId);
   const { data, error } = await query;
-  if (error) throw new Error("Não foi possível carregar os websites.");
+  if (error) throwQueryError("Não foi possível carregar os websites.", error);
   return data ?? [];
 }
 
 export async function criarVenda(input: VendaInput): Promise<Venda> {
   await requireAdminSession();
   const { data, error } = await db.from("vendas").insert(input).select().single();
-  if (error || !data) throw new Error("Não foi possível registrar a venda.");
+  if (error || !data) throwQueryError("Não foi possível registrar a venda.", error);
   return data as Venda;
 }
 
 export async function atualizarVenda(id: string, input: VendaInput): Promise<Venda> {
   await requireAdminSession();
   const { data, error } = await db.from("vendas").update(input).eq("id", id).select().single();
-  if (error || !data) throw new Error("Não foi possível atualizar a venda.");
+  if (error || !data) throwQueryError("Não foi possível atualizar a venda.", error);
   return data as Venda;
 }
