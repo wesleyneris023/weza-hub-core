@@ -42,3 +42,13 @@
 - [x] Adicionar rota autenticada `/assinaturas` e habilitar navegação.
 - [ ] Validar geração automática da rota, build, permissões RLS e fluxos CRUD no preview autenticado.
 - [ ] Revisar o cálculo de receita recorrente e definir o vínculo financeiro com pagamentos/faturamentos antes de automatizar cobranças.
+
+## Módulo Pagamentos
+
+- [x] Auditar e reutilizar `public.pagamentos`; tabela já possui cliente, assinatura opcional, valor, vencimento, data paga, status, método, referência e observações.
+- [x] Confirmar RLS habilitado e policy administrativa existente; sem migration ou registros fictícios.
+- [x] Criar consultas autenticadas para listar, cadastrar e editar pagamentos, além de carregar clientes e assinaturas.
+- [x] Criar tela com indicadores, busca, filtro por status, estado vazio e formulário de cadastro/edição.
+- [x] Adicionar rota autenticada `/pagamentos` e habilitar navegação.
+- [ ] Validar geração automática da rota, build, relacionamento cliente/assinatura e fluxos CRUD no preview autenticado.
+- [ ] Definir conciliação com faturamentos e automatizações apenas após validar os fluxos financeiros.
