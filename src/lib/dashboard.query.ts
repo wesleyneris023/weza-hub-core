@@ -24,20 +24,24 @@ interface AmountRow {
 
 const db = supabase as any;
 
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function monthRange(): { start: string; endExclusive: string } {
   const now = new Date();
-  const start = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
-  const end = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1));
-  return {
-    start: start.toISOString().slice(0, 10),
-    endExclusive: end.toISOString().slice(0, 10),
-  };
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  return { start: formatLocalDate(start), endExclusive: formatLocalDate(end) };
 }
 
 function dateFromNow(days: number): string {
   const date = new Date();
   date.setDate(date.getDate() + days);
-  return date.toISOString().slice(0, 10);
+  return formatLocalDate(date);
 }
 
 function sumAmounts(rows: AmountRow[] | null): number {
@@ -51,7 +55,7 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
   }
 
   const { start: monthStart, endExclusive: nextMonthStart } = monthRange();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = formatLocalDate(new Date());
   const in30Days = dateFromNow(30);
 
   const [clientes, sites, assinaturas, manutencoes, naoPagos, recebidos, faturamento, suspensos, vencendo] =
