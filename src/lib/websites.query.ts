@@ -53,7 +53,7 @@ export async function listarWebsites(params: WebsiteListParams): Promise<Website
   const to = from + WEBSITES_PAGE_SIZE - 1;
   let query = supabase
     .from("websites")
-    .select("*, clientes(nome, empresa)", { count: "exact" })
+    .select("*, cliente:clientes(nome, empresa)", { count: "exact" })
     .order("created_at", { ascending: false })
     .range(from, to);
 
