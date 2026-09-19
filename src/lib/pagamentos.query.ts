@@ -23,7 +23,7 @@ async function requireAdminSession() {
 export async function listarPagamentos(): Promise<PagamentoListItem[]> {
   await requireAdminSession();
   const { data, error } = await db.from("pagamentos")
-    .select("*, clientes(nome, empresa), assinaturas(id, status)")
+    .select("*, cliente:clientes(nome, empresa), assinatura:assinaturas(id, status)")
     .order("data_vencimento", { ascending: false }).order("created_at", { ascending: false });
   if (error) throw new Error("Não foi possível carregar os pagamentos.");
   return (data ?? []) as PagamentoListItem[];
