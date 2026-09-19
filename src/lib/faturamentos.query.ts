@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type FaturamentoStatus = "pendente" | "pago" | "atrasado" | "cancelado";
+export type FaturamentoStatus = "aberto" | "pago" | "atrasado" | "cancelado";
 export type Faturamento = {
   id: string; cliente_id: string; assinatura_id: string | null; competencia: string;
   valor: number; data_vencimento: string; data_pagamento: string | null;
