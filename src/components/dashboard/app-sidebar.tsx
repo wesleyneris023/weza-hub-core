@@ -19,12 +19,12 @@ import { cn } from "@/lib/utils";
 interface NavItem {
   label: string;
   icon: ComponentType<{ className?: string }>;
-  to?: "/dashboard" | "/clientes";
+  to?: "/dashboard" | "/clientes" | "/websites";
 }
 
 const managementItems: NavItem[] = [
   { label: "Clientes", icon: Users, to: "/clientes" },
-  { label: "Websites", icon: Globe2 },
+  { label: "Websites", icon: Globe2, to: "/websites" },
   { label: "Vendas", icon: ShoppingBag },
   { label: "Assinaturas", icon: RefreshCcw },
   { label: "Pagamentos", icon: CreditCard },
