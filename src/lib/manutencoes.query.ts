@@ -4,19 +4,11 @@ export type ManutencaoStatus = "aberta" | "em_andamento" | "concluida";
 export type ManutencaoPrioridade = "baixa" | "media" | "alta" | "urgente";
 
 export type Manutencao = {
-  id: string;
-  cliente_id: string;
-  website_id: string;
-  titulo: string;
-  descricao: string | null;
-  tipo: string;
-  status: ManutencaoStatus;
-  prioridade: ManutencaoPrioridade;
-  data_abertura: string;
-  data_conclusao: string | null;
-  observacoes: string | null;
-  created_at: string;
-  updated_at: string;
+  id: string; cliente_id: string; website_id: string; titulo: string;
+  descricao: string | null; tipo: string; status: ManutencaoStatus;
+  prioridade: ManutencaoPrioridade; data_abertura: string;
+  data_conclusao: string | null; observacoes: string | null;
+  created_at: string; updated_at: string;
 };
 
 export type ManutencaoListItem = Manutencao & {
@@ -36,12 +28,17 @@ async function requireAdminSession() {
   if (error || !data.user) throw new Error("Sua sessão expirou. Entre novamente.");
 }
 
+function throwQueryError(context: string, error: any): never {
+  console.error(`[WEZA HUB] ${context}`, { code: error?.code, message: error?.message, hint: error?.hint });
+  throw new Error(context);
+}
+
 export async function listarManutencoes(): Promise<ManutencaoListItem[]> {
   await requireAdminSession();
   const { data, error } = await db.from("manutencoes")
-    .select("*, cliente:clientes(nome, empresa), website:websites(nome, dominio)")
+    .select("*, cliente:clientes!manutencoes_cliente_id_fkey(nome, empresa), website:websites!manutencoes_website_id_fkey(nome, dominio)")
     .order("data_abertura", { ascending: false });
-  if (error) throw new Error("Não foi possível carregar as manutenções.");
+  if (error) throwQueryError("Não foi possível carregar as manutenções.", error);
   return (data ?? []) as ManutencaoListItem[];
 }
 
@@ -49,30 +46,29 @@ export async function listarClientesManutencao() {
   await requireAdminSession();
   const { data, error } = await db.from("clientes").select("id, nome, empresa, status")
     .eq("status", "ativo").order("nome", { ascending: true });
-  if (error) throw new Error("Não foi possível carregar os clientes.");
+  if (error) throwQueryError("Não foi possível carregar os clientes.", error);
   return data ?? [];
 }
 
 export async function listarWebsitesManutencao(clienteId?: string) {
   await requireAdminSession();
-  let query = db.from("websites").select("id, cliente_id, nome, dominio, status")
-    .order("nome", { ascending: true });
+  let query = db.from("websites").select("id, cliente_id, nome, dominio, status").order("nome", { ascending: true });
   if (clienteId) query = query.eq("cliente_id", clienteId);
   const { data, error } = await query;
-  if (error) throw new Error("Não foi possível carregar os websites.");
+  if (error) throwQueryError("Não foi possível carregar os websites.", error);
   return data ?? [];
 }
 
 export async function criarManutencao(input: ManutencaoInput): Promise<Manutencao> {
   await requireAdminSession();
   const { data, error } = await db.from("manutencoes").insert(input).select().single();
-  if (error || !data) throw new Error("Não foi possível registrar a manutenção.");
+  if (error || !data) throwQueryError("Não foi possível registrar a manutenção.", error);
   return data as Manutencao;
 }
 
 export async function atualizarManutencao(id: string, input: ManutencaoInput): Promise<Manutencao> {
   await requireAdminSession();
   const { data, error } = await db.from("manutencoes").update(input).eq("id", id).select().single();
-  if (error || !data) throw new Error("Não foi possível atualizar a manutenção.");
+  if (error || !data) throwQueryError("Não foi possível atualizar a manutenção.", error);
   return data as Manutencao;
 }
