@@ -56,7 +56,10 @@ async function requireAuthenticatedUser(): Promise<void> {
 }
 
 function safeSearch(value: string): string {
-  return value.trim().replace(/[%_,()]/g, " ").replace(/\s+/g, " ");
+  return value
+    .trim()
+    .replace(/[%_,()]/g, " ")
+    .replace(/\s+/g, " ");
 }
 
 function countRelation(value: CountRelation[] | null): number {
@@ -98,8 +101,14 @@ export async function listarClientes(params: ClienteListParams): Promise<Cliente
   };
 }
 
-async function countRelated(table: "websites" | "assinaturas" | "pagamentos" | "manutencoes" | "faturamentos", clienteId: string): Promise<number> {
-  const { count, error } = await supabase.from(table).select("id", { count: "exact", head: true }).eq("cliente_id", clienteId);
+async function countRelated(
+  table: "websites" | "assinaturas" | "pagamentos" | "manutencoes" | "faturamentos",
+  clienteId: string,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from(table)
+    .select("id", { count: "exact", head: true })
+    .eq("cliente_id", clienteId);
   if (error) throw new Error("Não foi possível verificar os vínculos do cliente.");
   return count ?? 0;
 }
@@ -133,9 +142,20 @@ export async function criarCliente(input: ClienteInput): Promise<Cliente> {
   return data;
 }
 
-export async function atualizarCliente({ id, input }: { id: string; input: TablesUpdate<"clientes"> }): Promise<Cliente> {
+export async function atualizarCliente({
+  id,
+  input,
+}: {
+  id: string;
+  input: TablesUpdate<"clientes">;
+}): Promise<Cliente> {
   await requireAuthenticatedUser();
-  const { data, error } = await supabase.from("clientes").update(input).eq("id", id).select().single();
+  const { data, error } = await supabase
+    .from("clientes")
+    .update(input)
+    .eq("id", id)
+    .select()
+    .single();
   if (error || !data) throw new Error("Não foi possível atualizar o cliente.");
   return data;
 }
@@ -144,8 +164,13 @@ export async function excluirCliente(clienteId: string): Promise<void> {
   await requireAuthenticatedUser();
   const related = await verificarVinculos(clienteId);
   if (Object.values(related).some((count) => count > 0)) {
-    throw new Error("Este cliente possui registros vinculados. Trate os vínculos antes de excluir.");
+    throw new Error(
+      "Este cliente possui registros vinculados. Trate os vínculos antes de excluir.",
+    );
   }
   const { error } = await supabase.from("clientes").delete().eq("id", clienteId);
-  if (error) throw new Error("Não foi possível excluir. Verifique se o cliente possui registros vinculados.");
+  if (error)
+    throw new Error(
+      "Não foi possível excluir. Verifique se o cliente possui registros vinculados.",
+    );
 }

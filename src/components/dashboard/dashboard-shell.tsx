@@ -14,7 +14,11 @@ export function DashboardShell() {
 
   return (
     <AppShell>
-      <DashboardContent metrics={metricsQuery.data} isLoading={metricsQuery.isLoading} hasError={metricsQuery.isError} />
+      <DashboardContent
+        metrics={metricsQuery.data}
+        isLoading={metricsQuery.isLoading}
+        hasError={metricsQuery.isError}
+      />
     </AppShell>
   );
 }

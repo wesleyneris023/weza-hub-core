@@ -124,12 +124,14 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      void router.invalidate();
-      if (event !== "SIGNED_OUT" && session) void queryClient.invalidateQueries();
-      if (event === "SIGNED_OUT") queryClient.clear();
-    });
+    const { data } = supabase.auth.onAuthStateChange(
+      (event: AuthChangeEvent, session: Session | null) => {
+        if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+        void router.invalidate();
+        if (event !== "SIGNED_OUT" && session) void queryClient.invalidateQueries();
+        if (event === "SIGNED_OUT") queryClient.clear();
+      },
+    );
 
     return () => data.subscription.unsubscribe();
   }, [queryClient, router]);
