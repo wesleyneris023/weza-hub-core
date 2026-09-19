@@ -12,4 +12,4 @@
 - [x] Implementar consulta paginada, pesquisa, filtro e contagens relacionadas.
 - [x] Implementar cadastro, edição, detalhe e exclusão protegida.
 - [x] Integrar notificações e invalidação do indicador de clientes ativos.
-- [ ] Validar estados, segurança, responsividade e fluxo público sem dados fictícios.
+- [x] Validar estados, segurança, responsividade e fluxo público sem dados fictícios.
