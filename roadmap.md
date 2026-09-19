@@ -22,3 +22,13 @@
 - [x] Adicionar rota autenticada `/websites` e habilitar item correspondente na navegação.
 - [ ] Validar geração automática da rota, build, permissões RLS e fluxos CRUD no preview autenticado.
 - [ ] Revisar os indicadores para totais globais e vencimentos, após validação funcional.
+
+## Módulo Vendas
+
+- [x] Criar `public.vendas` com vínculo opcional a website e obrigatório a cliente, índices, `updated_at` e RLS administrativa.
+- [x] Aplicar a migration no projeto Supabase Weza 2 sem inserir registros fictícios.
+- [x] Criar consultas autenticadas para listar, cadastrar e editar vendas, além de carregar clientes e websites existentes.
+- [x] Criar tela de Vendas com indicadores, busca, filtro de status, estado vazio e formulário de cadastro/edição.
+- [x] Adicionar rota autenticada `/vendas` e habilitar navegação.
+- [ ] Atualizar/validar tipos gerados, build, rota automática e fluxos CRUD no preview autenticado.
+- [ ] Confirmar a associação correta entre venda fechada, pagamento e faturamento antes de automatizar lançamentos financeiros.
