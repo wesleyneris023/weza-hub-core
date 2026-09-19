@@ -29,7 +29,9 @@ jobs:
         run: npm run lint
 
       - name: TypeScript check
+        if: ${{ !cancelled() }}
         run: npx tsc --noEmit
 
       - name: Production build
+        if: ${{ !cancelled() }}
         run: npm run build
