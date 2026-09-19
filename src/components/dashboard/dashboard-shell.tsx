@@ -8,7 +8,9 @@ export function DashboardShell() {
   const metricsQuery = useQuery({
     queryKey: ["dashboard-metrics"],
     queryFn: fetchDashboardMetrics,
-    staleTime: 60_000,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
     retry: false,
   });
 
