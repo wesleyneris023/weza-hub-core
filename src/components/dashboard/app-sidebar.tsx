@@ -19,11 +19,11 @@ import { cn } from "@/lib/utils";
 interface NavItem {
   label: string;
   icon: ComponentType<{ className?: string }>;
-  available?: boolean;
+  to?: "/dashboard" | "/clientes";
 }
 
 const managementItems: NavItem[] = [
-  { label: "Clientes", icon: Users },
+  { label: "Clientes", icon: Users, to: "/clientes" },
   { label: "Websites", icon: Globe2 },
   { label: "Vendas", icon: ShoppingBag },
   { label: "Assinaturas", icon: RefreshCcw },
@@ -52,13 +52,12 @@ function Brand() {
 
 function NavigationItem({ item }: { item: NavItem }) {
   const Icon = item.icon;
-  if (item.available) {
+  if (item.to) {
     return (
       <Link
-        to="/dashboard"
+        to={item.to}
         activeOptions={{ exact: true }}
-        className="flex h-10 items-center gap-3 rounded-lg bg-surface-strong px-3 text-sm font-semibold text-foreground shadow-soft ring-1 ring-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        aria-current="page"
+        className="flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-soft hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary [&.active]:bg-surface-strong [&.active]:font-semibold [&.active]:text-foreground [&.active]:shadow-soft [&.active]:ring-1 [&.active]:ring-primary/15"
       >
         <Icon className="size-4 text-primary" />
         <span>{item.label}</span>
@@ -81,7 +80,7 @@ function NavigationItem({ item }: { item: NavItem }) {
 }
 
 export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
-  const dashboard: NavItem = { label: "Dashboard", icon: LayoutDashboard, available: true };
+  const dashboard: NavItem = { label: "Dashboard", icon: LayoutDashboard, to: "/dashboard" };
 
   return (
     <>
@@ -104,17 +103,29 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
       >
         <div className="flex items-center justify-between">
           <Brand />
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fechar menu" className="lg:hidden">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            aria-label="Fechar menu"
+            className="lg:hidden"
+          >
             <X />
           </Button>
         </div>
 
         <nav className="mt-8 flex-1 overflow-y-auto">
-          <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-subtle">Panorama</p>
+          <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-subtle">
+            Panorama
+          </p>
           <NavigationItem item={dashboard} />
-          <p className="px-3 pb-2 pt-6 text-[10px] font-semibold uppercase tracking-[0.18em] text-subtle">Gestão</p>
+          <p className="px-3 pb-2 pt-6 text-[10px] font-semibold uppercase tracking-[0.18em] text-subtle">
+            Gestão
+          </p>
           <div className="space-y-1">
-            {managementItems.map((item) => <NavigationItem key={item.label} item={item} />)}
+            {managementItems.map((item) => (
+              <NavigationItem key={item.label} item={item} />
+            ))}
           </div>
         </nav>
 
@@ -123,7 +134,9 @@ export function AppSidebar({ mobileOpen, onClose }: AppSidebarProps) {
             <BadgeDollarSign className="size-4" />
             <p className="font-display text-sm font-semibold">Estrutura preparada</p>
           </div>
-          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">Pronta para receber a conexão de dados na próxima etapa.</p>
+          <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+            Pronta para receber a conexão de dados na próxima etapa.
+          </p>
         </div>
       </aside>
     </>
