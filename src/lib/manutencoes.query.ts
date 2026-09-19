@@ -39,7 +39,7 @@ async function requireAdminSession() {
 export async function listarManutencoes(): Promise<ManutencaoListItem[]> {
   await requireAdminSession();
   const { data, error } = await db.from("manutencoes")
-    .select("*, clientes(nome, empresa), websites(nome, dominio)")
+    .select("*, clientes(nome, empresa), website:websites(nome, dominio)")
     .order("data_abertura", { ascending: false });
   if (error) throw new Error("Não foi possível carregar as manutenções.");
   return (data ?? []) as ManutencaoListItem[];
