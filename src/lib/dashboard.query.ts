@@ -91,8 +91,7 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
     status: "pendente" | "atrasado";
   }>;
   const overdueRows = paymentRows.filter((payment) => payment.status === "atrasado" || payment.data_vencimento < today);
-  const overdueIds = new Set(overdueRows);
-  const openRows = paymentRows.filter((payment) => !overdueIds.has(payment));
+  const openRows = paymentRows.filter((payment) => payment.status === "pendente" && payment.data_vencimento >= today);
   const receivedRows = (recebidos.data ?? []) as AmountRow[];
   const invoiceRows = (faturamento.data ?? []) as AmountRow[];
 
