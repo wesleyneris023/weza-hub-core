@@ -32,7 +32,15 @@ export async function listarAssinaturas(): Promise<AssinaturaListItem[]> {
     .select("*, clientes(nome, empresa), websites(nome), planos(nome, periodo_cobranca)")
     .order("proximo_vencimento", { ascending: true }).order("created_at", { ascending: false });
   if (error) throw new Error("Não foi possível carregar as assinaturas.");
-  return (data ?? []).map((row: any) => ({ ...row, plano: row.planos ?? null, planos: undefined })) as AssinaturaListItem[];
+
+  // O PostgREST devolve os relacionamentos com os nomes das tabelas
+  // (clientes/websites/planos). A interface usa os aliases cliente/website/plano.
+  return (data ?? []).map((row: any) => ({
+    ...row,
+    cliente: row.clientes ?? null,
+    website: row.websites ?? null,
+    plano: row.planos ?? null,
+  })) as AssinaturaListItem[];
 }
 
 export async function listarPlanos(): Promise<Plano[]> {
