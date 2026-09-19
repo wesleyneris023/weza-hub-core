@@ -19,6 +19,18 @@ async function requireAdminSession() {
   if (error || !data.user) throw new Error("Sua sessão expirou. Entre novamente.");
 }
 
+async function validateFaturamentoInput(input: FaturamentoInput) {
+  if (!input.cliente_id) throw new Error("Selecione um cliente.");
+  if (!Number.isFinite(Number(input.valor)) || Number(input.valor) < 0) throw new Error("Informe um valor válido.");
+  if (input.status === "pago" && !input.data_pagamento) throw new Error("Informe a data do pagamento.");
+  if (input.status !== "pago" && input.data_pagamento) throw new Error("A data de pagamento só pode ser informada para faturamentos pagos.");
+  if (input.assinatura_id) {
+    const { data, error } = await db.from("assinaturas").select("id, cliente_id").eq("id", input.assinatura_id).maybeSingle();
+    if (error) throw new Error("Não foi possível validar a assinatura selecionada.");
+    if (!data || data.cliente_id !== input.cliente_id) throw new Error("A assinatura selecionada não pertence ao cliente informado.");
+  }
+}
+
 export async function listarFaturamentos(): Promise<FaturamentoListItem[]> {
   await requireAdminSession();
   const { data, error } = await db.from("faturamentos")
@@ -48,6 +60,7 @@ export async function listarAssinaturasFaturamento(clienteId?: string) {
 
 export async function criarFaturamento(input: FaturamentoInput): Promise<Faturamento> {
   await requireAdminSession();
+  await validateFaturamentoInput(input);
   const { data, error } = await db.from("faturamentos").insert(input).select().single();
   if (error || !data) throw new Error("Não foi possível registrar o faturamento.");
   return data as Faturamento;
@@ -55,6 +68,7 @@ export async function criarFaturamento(input: FaturamentoInput): Promise<Faturam
 
 export async function atualizarFaturamento(id: string, input: FaturamentoInput): Promise<Faturamento> {
   await requireAdminSession();
+  await validateFaturamentoInput(input);
   const { data, error } = await db.from("faturamentos").update(input).eq("id", id).select().single();
   if (error || !data) throw new Error("Não foi possível atualizar o faturamento.");
   return data as Faturamento;
