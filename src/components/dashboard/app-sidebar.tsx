@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 interface NavItem {
   label: string;
   icon: ComponentType<{ className?: string }>;
-  to?: "/dashboard" | "/clientes" | "/websites" | "/vendas" | "/assinaturas" | "/pagamentos" | "/manutencao";
+  to?: "/dashboard" | "/clientes" | "/websites" | "/vendas" | "/assinaturas" | "/pagamentos" | "/manutencao" | "/faturamento";
 }
 
 const managementItems: NavItem[] = [
@@ -29,7 +29,7 @@ const managementItems: NavItem[] = [
   { label: "Assinaturas", icon: RefreshCcw, to: "/assinaturas" },
   { label: "Pagamentos", icon: CreditCard, to: "/pagamentos" },
   { label: "Manutenção", icon: Wrench, to: "/manutencao" },
-  { label: "Faturamento", icon: ReceiptText },
+  { label: "Faturamento", icon: ReceiptText, to: "/faturamento" },
 ];
 
 export interface AppSidebarProps { mobileOpen: boolean; onClose: () => void; }
