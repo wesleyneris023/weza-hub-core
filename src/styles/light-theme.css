@@ -1,0 +1,93 @@
+/* Light theme polish: neutral surfaces, readable typography and chart contrast. */
+.light {
+  color-scheme: light;
+  --background: #f3f6fb;
+  --foreground: #17243a;
+  --card: #ffffff;
+  --card-foreground: #17243a;
+  --popover: #ffffff;
+  --popover-foreground: #17243a;
+  --muted: #e9eff7;
+  --muted-foreground: #5c6b80;
+  --border: #d7e1ee;
+  --input: #d7e1ee;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #26364d;
+  --sidebar-accent: #eaf1ff;
+  --sidebar-accent-foreground: #174ea6;
+  --sidebar-border: #dce5f0;
+  --surface-soft: #f2f6fc;
+  --surface-strong: #e7eef8;
+  --glass-border: #dce5f0;
+  --header-glass: rgb(255 255 255 / 96%);
+  --shadow-soft: 0 8px 24px -16px rgb(27 51 84 / 24%);
+}
+
+/* Replace dark-only utility colors that were leaking into light mode. */
+.light [class*="bg-[#081a31]"],
+.light [class*="bg-[#0b2340]"],
+.light [class*="bg-slate-800"],
+.light [class*="bg-slate-900"] {
+  background-color: #ffffff !important;
+}
+.light [class*="border-blue-900"] {
+  border-color: #d6e2f1 !important;
+}
+.light [class*="text-slate-100"] {
+  color: #17243a !important;
+}
+.light [class*="text-slate-300"] {
+  color: #40516a !important;
+}
+.light [class*="text-slate-400"] {
+  color: #5c6b80 !important;
+}
+.light [class*="text-slate-500"] {
+  color: #718096 !important;
+}
+.light [class*="text-blue-200"] {
+  color: #2459a6 !important;
+}
+.light [class*="border-blue-900/70"] {
+  border-color: #d6e2f1 !important;
+}
+.light [class*="bg-blue-900/"],
+.light [class*="bg-indigo-900/"] {
+  background-color: #eaf1ff !important;
+}
+.light [class*="animate-pulse"] {
+  background-color: #e5edf7 !important;
+}
+
+/* Recharts axes/grid/tooltip need explicit contrast because SVG colors are inline. */
+.light .recharts-cartesian-axis-tick-value {
+  fill: #64748b !important;
+}
+.light .recharts-cartesian-axis-line,
+.light .recharts-cartesian-axis-tick-line {
+  stroke: #cbd5e1 !important;
+}
+.light .recharts-cartesian-grid line {
+  stroke: #e2e8f0 !important;
+}
+.light .recharts-default-tooltip {
+  background-color: #ffffff !important;
+  border: 1px solid #d7e1ee !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 24px rgb(27 51 84 / 12%);
+}
+.light .recharts-tooltip-label,
+.light .recharts-tooltip-item {
+  color: #17243a !important;
+}
+
+/* Keep the active navigation crisp while softening the inactive sidebar. */
+.light aside,
+.light [data-sidebar="sidebar"] {
+  background-color: #ffffff;
+  border-color: #dce5f0;
+}
+.light .app-background::before,
+.light .app-background::after {
+  opacity: 0.045;
+}
