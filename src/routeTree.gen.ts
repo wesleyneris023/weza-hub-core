@@ -12,8 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedAssinaturasRouteImport } from './routes/_authenticated/assinaturas'
 import { Route as AuthenticatedClientesRouteImport } from './routes/_authenticated/clientes'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedFaturamentoRouteImport } from './routes/_authenticated/faturamento'
+import { Route as AuthenticatedManutencaoRouteImport } from './routes/_authenticated/manutencao'
+import { Route as AuthenticatedPagamentosRouteImport } from './routes/_authenticated/pagamentos'
+import { Route as AuthenticatedVendasRouteImport } from './routes/_authenticated/vendas'
+import { Route as AuthenticatedWebsitesRouteImport } from './routes/_authenticated/websites'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -29,6 +35,12 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAssinaturasRoute =
+  AuthenticatedAssinaturasRouteImport.update({
+    id: '/assinaturas',
+    path: '/assinaturas',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedClientesRoute = AuthenticatedClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
@@ -39,39 +51,109 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFaturamentoRoute =
+  AuthenticatedFaturamentoRouteImport.update({
+    id: '/faturamento',
+    path: '/faturamento',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedManutencaoRoute = AuthenticatedManutencaoRouteImport.update({
+  id: '/manutencao',
+  path: '/manutencao',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPagamentosRoute = AuthenticatedPagamentosRouteImport.update({
+  id: '/pagamentos',
+  path: '/pagamentos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedVendasRoute = AuthenticatedVendasRouteImport.update({
+  id: '/vendas',
+  path: '/vendas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedWebsitesRoute = AuthenticatedWebsitesRouteImport.update({
+  id: '/websites',
+  path: '/websites',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/assinaturas': typeof AuthenticatedAssinaturasRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/faturamento': typeof AuthenticatedFaturamentoRoute
+  '/manutencao': typeof AuthenticatedManutencaoRoute
+  '/pagamentos': typeof AuthenticatedPagamentosRoute
+  '/vendas': typeof AuthenticatedVendasRoute
+  '/websites': typeof AuthenticatedWebsitesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/assinaturas': typeof AuthenticatedAssinaturasRoute
   '/clientes': typeof AuthenticatedClientesRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/faturamento': typeof AuthenticatedFaturamentoRoute
+  '/manutencao': typeof AuthenticatedManutencaoRoute
+  '/pagamentos': typeof AuthenticatedPagamentosRoute
+  '/vendas': typeof AuthenticatedVendasRoute
+  '/websites': typeof AuthenticatedWebsitesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/assinaturas': typeof AuthenticatedAssinaturasRoute
   '/_authenticated/clientes': typeof AuthenticatedClientesRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/faturamento': typeof AuthenticatedFaturamentoRoute
+  '/_authenticated/manutencao': typeof AuthenticatedManutencaoRoute
+  '/_authenticated/pagamentos': typeof AuthenticatedPagamentosRoute
+  '/_authenticated/vendas': typeof AuthenticatedVendasRoute
+  '/_authenticated/websites': typeof AuthenticatedWebsitesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/clientes' | '/dashboard'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/assinaturas'
+    | '/clientes'
+    | '/dashboard'
+    | '/faturamento'
+    | '/manutencao'
+    | '/pagamentos'
+    | '/vendas'
+    | '/websites'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/clientes' | '/dashboard'
+  to:
+    | '/'
+    | '/auth'
+    | '/assinaturas'
+    | '/clientes'
+    | '/dashboard'
+    | '/faturamento'
+    | '/manutencao'
+    | '/pagamentos'
+    | '/vendas'
+    | '/websites'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/assinaturas'
     | '/_authenticated/clientes'
     | '/_authenticated/dashboard'
+    | '/_authenticated/faturamento'
+    | '/_authenticated/manutencao'
+    | '/_authenticated/pagamentos'
+    | '/_authenticated/vendas'
+    | '/_authenticated/websites'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -103,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/assinaturas': {
+      id: '/_authenticated/assinaturas'
+      path: '/assinaturas'
+      fullPath: '/assinaturas'
+      preLoaderRoute: typeof AuthenticatedAssinaturasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/clientes': {
       id: '/_authenticated/clientes'
       path: '/clientes'
@@ -117,17 +206,64 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/faturamento': {
+      id: '/_authenticated/faturamento'
+      path: '/faturamento'
+      fullPath: '/faturamento'
+      preLoaderRoute: typeof AuthenticatedFaturamentoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/manutencao': {
+      id: '/_authenticated/manutencao'
+      path: '/manutencao'
+      fullPath: '/manutencao'
+      preLoaderRoute: typeof AuthenticatedManutencaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pagamentos': {
+      id: '/_authenticated/pagamentos'
+      path: '/pagamentos'
+      fullPath: '/pagamentos'
+      preLoaderRoute: typeof AuthenticatedPagamentosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/vendas': {
+      id: '/_authenticated/vendas'
+      path: '/vendas'
+      fullPath: '/vendas'
+      preLoaderRoute: typeof AuthenticatedVendasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/websites': {
+      id: '/_authenticated/websites'
+      path: '/websites'
+      fullPath: '/websites'
+      preLoaderRoute: typeof AuthenticatedWebsitesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAssinaturasRoute: typeof AuthenticatedAssinaturasRoute
   AuthenticatedClientesRoute: typeof AuthenticatedClientesRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedFaturamentoRoute: typeof AuthenticatedFaturamentoRoute
+  AuthenticatedManutencaoRoute: typeof AuthenticatedManutencaoRoute
+  AuthenticatedPagamentosRoute: typeof AuthenticatedPagamentosRoute
+  AuthenticatedVendasRoute: typeof AuthenticatedVendasRoute
+  AuthenticatedWebsitesRoute: typeof AuthenticatedWebsitesRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAssinaturasRoute: AuthenticatedAssinaturasRoute,
   AuthenticatedClientesRoute: AuthenticatedClientesRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedFaturamentoRoute: AuthenticatedFaturamentoRoute,
+  AuthenticatedManutencaoRoute: AuthenticatedManutencaoRoute,
+  AuthenticatedPagamentosRoute: AuthenticatedPagamentosRoute,
+  AuthenticatedVendasRoute: AuthenticatedVendasRoute,
+  AuthenticatedWebsitesRoute: AuthenticatedWebsitesRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

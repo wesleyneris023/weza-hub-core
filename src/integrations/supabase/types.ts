@@ -70,6 +70,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "assinaturas_website_cliente_fkey"
+            columns: ["website_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "websites"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
             foreignKeyName: "assinaturas_website_id_fkey"
             columns: ["website_id"]
             isOneToOne: false
@@ -159,6 +166,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "faturamentos_assinatura_cliente_fkey"
+            columns: ["assinatura_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "assinaturas"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
             foreignKeyName: "faturamentos_assinatura_id_fkey"
             columns: ["assinatura_id"]
             isOneToOne: false
@@ -229,6 +243,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "manutencoes_website_cliente_fkey"
+            columns: ["website_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "websites"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
             foreignKeyName: "manutencoes_website_id_fkey"
             columns: ["website_id"]
             isOneToOne: false
@@ -281,6 +302,13 @@ export type Database = {
           valor?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "pagamentos_assinatura_cliente_fkey"
+            columns: ["assinatura_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "assinaturas"
+            referencedColumns: ["id", "cliente_id"]
+          },
           {
             foreignKeyName: "pagamentos_assinatura_id_fkey"
             columns: ["assinatura_id"]
@@ -356,6 +384,76 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vendas: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          data_venda: string
+          forma_pagamento: string | null
+          id: string
+          observacoes: string | null
+          previsao_fechamento: string | null
+          status: string
+          tipo_servico: string
+          titulo: string
+          updated_at: string
+          valor: number
+          website_id: string | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          data_venda?: string
+          forma_pagamento?: string | null
+          id?: string
+          observacoes?: string | null
+          previsao_fechamento?: string | null
+          status?: string
+          tipo_servico: string
+          titulo: string
+          updated_at?: string
+          valor?: number
+          website_id?: string | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          data_venda?: string
+          forma_pagamento?: string | null
+          id?: string
+          observacoes?: string | null
+          previsao_fechamento?: string | null
+          status?: string
+          tipo_servico?: string
+          titulo?: string
+          updated_at?: string
+          valor?: number
+          website_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendas_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendas_website_cliente_fkey"
+            columns: ["website_id", "cliente_id"]
+            isOneToOne: false
+            referencedRelation: "websites"
+            referencedColumns: ["id", "cliente_id"]
+          },
+          {
+            foreignKeyName: "vendas_website_id_fkey"
+            columns: ["website_id"]
+            isOneToOne: false
+            referencedRelation: "websites"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       websites: {
         Row: {
