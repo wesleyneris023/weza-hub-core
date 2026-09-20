@@ -31,19 +31,21 @@ export async function fetchDashboardCharts(): Promise<DashboardChartsData> {
   const error = [billingResult, salesResult, paymentResult].find((result) => result.error)?.error;
   if (error) throw new Error(`Não foi possível carregar os gráficos: ${error.message}`);
 
+  const billingRows = (billingResult.data ?? []) as Row[];
+  const salesRows = (salesResult.data ?? []) as Row[];
   const monthly: MonthlyChartPoint[] = Array.from({ length: 6 }, (_, index) => {
     const date = new Date(now.getFullYear(), now.getMonth() - 5 + index, 1);
     const key = monthKey(date);
     return {
       month: new Intl.DateTimeFormat("pt-BR", { month: "short" }).format(date).replace(".", ""),
-      faturamento: ((billingResult.data ?? []) as Row[]).filter((row) => row.competencia?.slice(0, 7) === key).reduce((sum, row) => sum + money(row.valor), 0),
-      vendas: ((salesResult.data ?? []) as Row[]).filter((row) => row.data_venda?.slice(0, 7) === key).reduce((sum, row) => sum + money(row.valor), 0),
+      faturamento: billingRows.filter((row) => row.competencia?.slice(0, 7) === key).reduce((sum, row) => sum + money(row.valor), 0),
+      vendas: salesRows.filter((row) => row.data_venda?.slice(0, 7) === key).reduce((sum, row) => sum + money(row.valor), 0),
     };
   });
 
   const paymentRows = (paymentResult.data ?? []) as Row[];
   const paid = paymentRows.filter((row) => row.status === "pago");
-  const overdue = paymentRows.filter((row) => row.status === "atrasado" || ((row.status === "pendente") && Boolean(row.data_vencimento) && row.data_vencimento! < today));
+  const overdue = paymentRows.filter((row) => row.status === "atrasado" || (row.status === "pendente" && Boolean(row.data_vencimento) && row.data_vencimento! < today));
   const pending = paymentRows.filter((row) => row.status === "pendente" && (!row.data_vencimento || row.data_vencimento >= today));
   const payments: PaymentChartPoint[] = [
     { key: "pago", name: "Recebidos", value: paid.reduce((sum, row) => sum + money(row.valor), 0) },
