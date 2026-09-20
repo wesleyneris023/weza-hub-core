@@ -19,6 +19,10 @@ export type ManutencaoListItem = Manutencao & {
 export type ManutencaoInput = Pick<Manutencao,
   "cliente_id" | "website_id" | "titulo" | "descricao" | "tipo" | "status" | "prioridade" | "data_abertura" | "data_conclusao" | "observacoes"
 >;
+export type ManutencaoClienteOption = { id: string; nome: string; empresa: string | null; status: string };
+export type ManutencaoWebsiteOption = {
+  id: string; cliente_id: string; nome: string; dominio: string | null; status: string;
+};
 
 export const manutencoesQueryKey = ["manutencoes"] as const;
 const db = supabase as any;
@@ -42,21 +46,21 @@ export async function listarManutencoes(): Promise<ManutencaoListItem[]> {
   return (data ?? []) as ManutencaoListItem[];
 }
 
-export async function listarClientesManutencao() {
+export async function listarClientesManutencao(): Promise<ManutencaoClienteOption[]> {
   await requireAdminSession();
   const { data, error } = await db.from("clientes").select("id, nome, empresa, status")
     .eq("status", "ativo").order("nome", { ascending: true });
   if (error) throwQueryError("Não foi possível carregar os clientes.", error);
-  return data ?? [];
+  return (data ?? []) as ManutencaoClienteOption[];
 }
 
-export async function listarWebsitesManutencao(clienteId?: string) {
+export async function listarWebsitesManutencao(clienteId?: string): Promise<ManutencaoWebsiteOption[]> {
   await requireAdminSession();
   let query = db.from("websites").select("id, cliente_id, nome, dominio, status").order("nome", { ascending: true });
   if (clienteId) query = query.eq("cliente_id", clienteId);
   const { data, error } = await query;
   if (error) throwQueryError("Não foi possível carregar os websites.", error);
-  return data ?? [];
+  return (data ?? []) as ManutencaoWebsiteOption[];
 }
 
 export async function criarManutencao(input: ManutencaoInput): Promise<Manutencao> {

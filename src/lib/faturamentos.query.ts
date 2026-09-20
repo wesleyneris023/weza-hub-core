@@ -11,6 +11,10 @@ export type FaturamentoListItem = Faturamento & {
   assinatura: { id: string; status: string; valor: number } | null;
 };
 export type FaturamentoInput = Omit<Faturamento, "id" | "created_at" | "updated_at">;
+export type FaturamentoClienteOption = { id: string; nome: string; empresa: string | null; status: string };
+export type FaturamentoAssinaturaOption = {
+  id: string; cliente_id: string; status: string; valor: number; proximo_vencimento: string;
+};
 export const faturamentosQueryKey = ["faturamentos"] as const;
 const db = supabase as any;
 
@@ -45,22 +49,22 @@ export async function listarFaturamentos(): Promise<FaturamentoListItem[]> {
   return (data ?? []) as FaturamentoListItem[];
 }
 
-export async function listarClientesFaturamento() {
+export async function listarClientesFaturamento(): Promise<FaturamentoClienteOption[]> {
   await requireAdminSession();
   const { data, error } = await db.from("clientes").select("id, nome, empresa, status")
     .eq("status", "ativo").order("nome", { ascending: true });
   if (error) throwQueryError("Não foi possível carregar os clientes.", error);
-  return data ?? [];
+  return (data ?? []) as FaturamentoClienteOption[];
 }
 
-export async function listarAssinaturasFaturamento(clienteId?: string) {
+export async function listarAssinaturasFaturamento(clienteId?: string): Promise<FaturamentoAssinaturaOption[]> {
   await requireAdminSession();
   let query = db.from("assinaturas").select("id, cliente_id, status, valor, proximo_vencimento")
     .order("proximo_vencimento", { ascending: true });
   if (clienteId) query = query.eq("cliente_id", clienteId);
   const { data, error } = await query;
   if (error) throwQueryError("Não foi possível carregar as assinaturas.", error);
-  return data ?? [];
+  return (data ?? []) as FaturamentoAssinaturaOption[];
 }
 
 export async function criarFaturamento(input: FaturamentoInput): Promise<Faturamento> {
