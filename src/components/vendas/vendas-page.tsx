@@ -14,7 +14,14 @@ const statuses: { value: VendaStatus | "todas"; label: string }[] = [
   { value: "perdida", label: "Perdida" }, { value: "cancelada", label: "Cancelada" },
 ];
 const money = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value || 0);
-const today = () => new Date().toISOString().slice(0, 10);
+// Use the browser's local calendar date; ISO UTC conversion can shift the day in Brazil.
+const today = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 const blank = { cliente_id: "", website_id: "", titulo: "", tipo_servico: "Criação de website", valor: "", forma_pagamento: "", data_venda: today(), previsao_fechamento: "", status: "proposta" as VendaStatus, observacoes: "" };
 
 export function VendasPage() {
@@ -34,7 +41,7 @@ export function VendasPage() {
     onSuccess: async () => { setOpen(false); setEditing(null); await qc.invalidateQueries({ queryKey: vendasQueryKey }); toast.success(editing ? "Venda atualizada." : "Venda registrada."); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Não foi possível salvar a venda."),
   });
-  const startCreate = () => { setEditing(null); setForm({ ...blank }); setOpen(true); };
+  const startCreate = () => { setEditing(null); setForm({ ...blank, data_venda: today() }); setOpen(true); };
   const startEdit = (v: Venda) => { setEditing(v); setForm({ cliente_id: v.cliente_id, website_id: v.website_id ?? "", titulo: v.titulo, tipo_servico: v.tipo_servico, valor: String(v.valor), forma_pagamento: v.forma_pagamento ?? "", data_venda: v.data_venda, previsao_fechamento: v.previsao_fechamento ?? "", status: v.status, observacoes: v.observacoes ?? "" }); setOpen(true); };
   const set = (key: keyof typeof blank, value: string) => setForm(prev => ({ ...prev, [key]: value }));
   const submit = (e: React.FormEvent) => {

@@ -12,15 +12,21 @@ export type FaturamentoListItem = Faturamento & {
 };
 export type FaturamentoInput = Omit<Faturamento, "id" | "created_at" | "updated_at">;
 export const faturamentosQueryKey = ["faturamentos"] as const;
-const db = supabase as any;
 
 async function requireAdminSession() {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) throw new Error("Sua sessão expirou. Entre novamente.");
 }
 
-function throwQueryError(context: string, error: any): never {
-  console.error(`[WEZA HUB] ${context}`, { code: error?.code, message: error?.message, hint: error?.hint });
+function throwQueryError(context: string, error: unknown): never {
+  const details = error && typeof error === "object"
+    ? error as { code?: unknown; message?: unknown; hint?: unknown }
+    : {};
+  console.error(`[WEZA HUB] ${context}`, {
+    code: details.code,
+    message: details.message,
+    hint: details.hint,
+  });
   throw new Error(context);
 }
 
@@ -30,7 +36,7 @@ async function validateFaturamentoInput(input: FaturamentoInput) {
   if (input.status === "pago" && !input.data_pagamento) throw new Error("Informe a data do pagamento.");
   if (input.status !== "pago" && input.data_pagamento) throw new Error("A data de pagamento só pode ser informada para faturamentos pagos.");
   if (input.assinatura_id) {
-    const { data, error } = await db.from("assinaturas").select("id, cliente_id").eq("id", input.assinatura_id).maybeSingle();
+    const { data, error } = await supabase.from("assinaturas").select("id, cliente_id").eq("id", input.assinatura_id).maybeSingle();
     if (error) throwQueryError("Não foi possível validar a assinatura selecionada.", error);
     if (!data || data.cliente_id !== input.cliente_id) throw new Error("A assinatura selecionada não pertence ao cliente informado.");
   }
@@ -38,7 +44,7 @@ async function validateFaturamentoInput(input: FaturamentoInput) {
 
 export async function listarFaturamentos(): Promise<FaturamentoListItem[]> {
   await requireAdminSession();
-  const { data, error } = await db.from("faturamentos")
+  const { data, error } = await supabase.from("faturamentos")
     .select("*, cliente:clientes!faturamentos_cliente_id_fkey(nome, empresa), assinatura:assinaturas!faturamentos_assinatura_id_fkey(id, status, valor)")
     .order("competencia", { ascending: false }).order("data_vencimento", { ascending: false });
   if (error) throwQueryError("Não foi possível carregar os faturamentos.", error);
@@ -47,7 +53,7 @@ export async function listarFaturamentos(): Promise<FaturamentoListItem[]> {
 
 export async function listarClientesFaturamento() {
   await requireAdminSession();
-  const { data, error } = await db.from("clientes").select("id, nome, empresa, status")
+  const { data, error } = await supabase.from("clientes").select("id, nome, empresa, status")
     .eq("status", "ativo").order("nome", { ascending: true });
   if (error) throwQueryError("Não foi possível carregar os clientes.", error);
   return data ?? [];
@@ -55,7 +61,7 @@ export async function listarClientesFaturamento() {
 
 export async function listarAssinaturasFaturamento(clienteId?: string) {
   await requireAdminSession();
-  let query = db.from("assinaturas").select("id, cliente_id, status, valor, proximo_vencimento")
+  let query = supabase.from("assinaturas").select("id, cliente_id, status, valor, proximo_vencimento")
     .order("proximo_vencimento", { ascending: true });
   if (clienteId) query = query.eq("cliente_id", clienteId);
   const { data, error } = await query;
@@ -66,7 +72,7 @@ export async function listarAssinaturasFaturamento(clienteId?: string) {
 export async function criarFaturamento(input: FaturamentoInput): Promise<Faturamento> {
   await requireAdminSession();
   await validateFaturamentoInput(input);
-  const { data, error } = await db.from("faturamentos").insert(input).select().single();
+  const { data, error } = await supabase.from("faturamentos").insert(input).select().single();
   if (error || !data) throwQueryError("Não foi possível registrar o faturamento.", error);
   return data as Faturamento;
 }
@@ -74,7 +80,7 @@ export async function criarFaturamento(input: FaturamentoInput): Promise<Faturam
 export async function atualizarFaturamento(id: string, input: FaturamentoInput): Promise<Faturamento> {
   await requireAdminSession();
   await validateFaturamentoInput(input);
-  const { data, error } = await db.from("faturamentos").update(input).eq("id", id).select().single();
+  const { data, error } = await supabase.from("faturamentos").update(input).eq("id", id).select().single();
   if (error || !data) throwQueryError("Não foi possível atualizar o faturamento.", error);
   return data as Faturamento;
 }

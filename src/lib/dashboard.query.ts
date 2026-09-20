@@ -22,8 +22,6 @@ interface AmountRow {
   valor: number | string;
 }
 
-const db = supabase as any;
-
 function formatLocalDate(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -60,16 +58,16 @@ export async function fetchDashboardMetrics(): Promise<DashboardMetrics> {
 
   const [clientes, sites, assinaturas, manutencoes, naoPagos, recebidos, faturamento, suspensos, vencendo] =
     await Promise.all([
-      db.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo"),
-      db.from("websites").select("id", { count: "exact", head: true }).eq("status", "ativo"),
-      db.from("assinaturas").select("valor, planos(periodo_cobranca)").eq("status", "ativa"),
-      db.from("manutencoes").select("id", { count: "exact", head: true }).in("status", ["aberta", "em_andamento"]),
-      db.from("pagamentos").select("valor, data_vencimento, status").in("status", ["pendente", "atrasado"]),
-      db.from("pagamentos").select("valor").eq("status", "pago"),
-      db.from("faturamentos").select("valor").gte("competencia", monthStart)
+      supabase.from("clientes").select("id", { count: "exact", head: true }).eq("status", "ativo"),
+      supabase.from("websites").select("id", { count: "exact", head: true }).eq("status", "ativo"),
+      supabase.from("assinaturas").select("valor, planos(periodo_cobranca)").eq("status", "ativa"),
+      supabase.from("manutencoes").select("id", { count: "exact", head: true }).in("status", ["aberta", "em_andamento"]),
+      supabase.from("pagamentos").select("valor, data_vencimento, status").in("status", ["pendente", "atrasado"]),
+      supabase.from("pagamentos").select("valor").eq("status", "pago"),
+      supabase.from("faturamentos").select("valor").gte("competencia", monthStart)
         .lt("competencia", nextMonthStart).neq("status", "cancelado"),
-      db.from("websites").select("id", { count: "exact", head: true }).eq("status", "suspenso"),
-      db.from("assinaturas").select("id", { count: "exact", head: true })
+      supabase.from("websites").select("id", { count: "exact", head: true }).eq("status", "suspenso"),
+      supabase.from("assinaturas").select("id", { count: "exact", head: true })
         .eq("status", "ativa").gte("proximo_vencimento", today).lte("proximo_vencimento", in30Days),
     ]);
 
