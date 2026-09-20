@@ -17,6 +17,8 @@ export type AssinaturaListItem = Assinatura & {
 };
 export type PlanoInput = Pick<Plano, "nome" | "descricao" | "valor_mensal" | "valor_anual" | "periodo_cobranca" | "ativo">;
 export type AssinaturaInput = Pick<Assinatura, "cliente_id" | "website_id" | "plano_id" | "valor" | "data_inicio" | "proximo_vencimento" | "status" | "observacoes">;
+export type AssinaturaClienteOption = { id: string; nome: string; empresa: string | null; status: string };
+export type AssinaturaWebsiteOption = { id: string; nome: string; cliente_id: string };
 export const assinaturasQueryKey = ["assinaturas"] as const;
 export const planosQueryKey = ["planos"] as const;
 const db = supabase as any;
@@ -47,21 +49,21 @@ export async function listarPlanos(): Promise<Plano[]> {
   return (data ?? []) as Plano[];
 }
 
-export async function listarClientesAssinatura() {
+export async function listarClientesAssinatura(): Promise<AssinaturaClienteOption[]> {
   await requireAdminSession();
   const { data, error } = await db.from("clientes").select("id, nome, empresa, status")
     .eq("status", "ativo").order("nome", { ascending: true });
   if (error) throwQueryError("Não foi possível carregar os clientes.", error);
-  return data ?? [];
+  return (data ?? []) as AssinaturaClienteOption[];
 }
 
-export async function listarWebsitesAssinatura(clienteId?: string) {
+export async function listarWebsitesAssinatura(clienteId?: string): Promise<AssinaturaWebsiteOption[]> {
   await requireAdminSession();
   let query = db.from("websites").select("id, nome, cliente_id").order("nome", { ascending: true });
   if (clienteId) query = query.eq("cliente_id", clienteId);
   const { data, error } = await query;
   if (error) throwQueryError("Não foi possível carregar os websites.", error);
-  return data ?? [];
+  return (data ?? []) as AssinaturaWebsiteOption[];
 }
 
 export async function criarPlano(input: PlanoInput): Promise<Plano> {

@@ -12,6 +12,10 @@ export type PagamentoListItem = Pagamento & {
   assinatura: { id: string; status: string } | null;
 };
 export type PagamentoInput = Omit<Pagamento, "id" | "created_at" | "updated_at">;
+export type PagamentoClienteOption = { id: string; nome: string; empresa: string | null; status: string };
+export type PagamentoAssinaturaOption = {
+  id: string; cliente_id: string; status: string; valor: number; proximo_vencimento: string;
+};
 export const pagamentosQueryKey = ["pagamentos"] as const;
 const db = supabase as any;
 
@@ -46,22 +50,22 @@ export async function listarPagamentos(): Promise<PagamentoListItem[]> {
   return (data ?? []) as PagamentoListItem[];
 }
 
-export async function listarClientesPagamento() {
+export async function listarClientesPagamento(): Promise<PagamentoClienteOption[]> {
   await requireAdminSession();
   const { data, error } = await db.from("clientes").select("id, nome, empresa, status")
     .eq("status", "ativo").order("nome", { ascending: true });
   if (error) throwQueryError("Não foi possível carregar os clientes.", error);
-  return data ?? [];
+  return (data ?? []) as PagamentoClienteOption[];
 }
 
-export async function listarAssinaturasPagamento(clienteId?: string) {
+export async function listarAssinaturasPagamento(clienteId?: string): Promise<PagamentoAssinaturaOption[]> {
   await requireAdminSession();
   let query = db.from("assinaturas").select("id, cliente_id, status, valor, proximo_vencimento")
     .order("proximo_vencimento", { ascending: true });
   if (clienteId) query = query.eq("cliente_id", clienteId);
   const { data, error } = await query;
   if (error) throwQueryError("Não foi possível carregar as assinaturas.", error);
-  return data ?? [];
+  return (data ?? []) as PagamentoAssinaturaOption[];
 }
 
 export async function criarPagamento(input: PagamentoInput): Promise<Pagamento> {
