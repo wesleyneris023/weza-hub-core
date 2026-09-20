@@ -101,14 +101,14 @@ function StatusBadge({ status }: { status: string }) {
     suspenso: "bg-muted text-muted-foreground ring-border",
   };
   const label = statusOptions.find((item) => item.value === status)?.label ?? status;
-  return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${styles[status] ?? styles.pendente}`}>{label}</span>;
+  return <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${styles[status] ?? styles["pendente"]}`}>{label}</span>;
 }
 
 function WebsiteFormSheet({
   open, website, clients, clientsLoading, isSaving, onOpenChange, onSubmit,
 }: {
   open: boolean;
-  website?: WebsiteListItem;
+  website: WebsiteListItem | undefined;
   clients: Awaited<ReturnType<typeof listarClientesParaWebsite>>;
   clientsLoading: boolean;
   isSaving: boolean;
