@@ -1,9 +1,10 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { Menu, Search, X } from "lucide-react";
+import { ChevronDown, LogOut, Menu, Search, UserRound, X } from "lucide-react";
 
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface AppShellProps {
   children: ReactNode;
@@ -24,6 +25,24 @@ export function AppShell({ children }: AppShellProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profileName, setProfileName] = useState("Minha conta");
+  const [profileEmail, setProfileEmail] = useState("");
+  const [signingOut, setSigningOut] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getUser().then(({ data }) => {
+      if (!mounted || !data.user) return;
+      const user = data.user;
+      const metadataName = user.user_metadata?.full_name ?? user.user_metadata?.name;
+      setProfileName(typeof metadataName === "string" && metadataName.trim()
+        ? metadataName
+        : user.email?.split("@")[0] || "Minha conta");
+      setProfileEmail(user.email ?? "");
+    });
+    return () => { mounted = false; };
+  }, []);
 
   const filteredPages = useMemo(() => {
     const term = search.trim().toLocaleLowerCase("pt-BR");
@@ -32,6 +51,15 @@ export function AppShell({ children }: AppShellProps) {
       `${page.label} ${page.description}`.toLocaleLowerCase("pt-BR").includes(term),
     );
   }, [search]);
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    const { error } = await supabase.auth.signOut();
+    setSigningOut(false);
+    if (!error) window.location.assign("/Auth");
+  }
+
+  const profileInitial = profileName.trim().charAt(0).toLocaleUpperCase("pt-BR") || "W";
 
   return (
     <div className="app-background relative min-h-screen overflow-hidden bg-background text-foreground">
@@ -125,11 +153,53 @@ export function AppShell({ children }: AppShellProps) {
               </div>
               <span className="font-display font-bold">WEZA HUB</span>
             </div>
-            <div
-              className="ml-auto grid size-9 place-items-center rounded-full border border-glass-border bg-surface-strong font-display text-sm font-semibold text-foreground shadow-soft"
-              aria-label="Perfil do usuário"
-            >
-              W
+
+            <div className="relative ml-auto">
+              <button
+                type="button"
+                onClick={() => setProfileOpen((open) => !open)}
+                aria-label="Abrir opções do perfil"
+                aria-expanded={profileOpen}
+                className="flex items-center gap-3 rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-surface-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <span className="grid size-10 shrink-0 place-items-center rounded-full border border-primary/40 bg-brand-gradient font-display text-lg font-semibold text-brand-foreground shadow-soft">
+                  {profileInitial}
+                </span>
+                <span className="hidden min-w-0 sm:block">
+                  <span className="block max-w-36 truncate text-sm font-semibold text-foreground">{profileName}</span>
+                  <span className="block text-xs text-muted-foreground">Minha conta</span>
+                </span>
+                <ChevronDown className={`hidden size-4 text-muted-foreground transition-transform sm:block ${profileOpen ? "rotate-180" : ""}`} />
+              </button>
+
+              {profileOpen && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Fechar menu do perfil"
+                    className="fixed inset-0 z-20 cursor-default"
+                    onClick={() => setProfileOpen(false)}
+                  />
+                  <div className="absolute right-0 top-full z-30 mt-2 w-72 overflow-hidden rounded-xl border border-glass-border bg-background shadow-xl">
+                    <div className="border-b border-glass-border px-4 py-3">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+                        <UserRound className="size-4 text-primary" />
+                        Meu perfil
+                      </div>
+                      <p className="mt-1 truncate text-xs text-muted-foreground">{profileEmail || "Conta autenticada"}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      disabled={signingOut}
+                      className="flex w-full items-center gap-2 px-4 py-3 text-sm text-muted-foreground transition-colors hover:bg-surface-soft hover:text-foreground disabled:opacity-50"
+                    >
+                      <LogOut className="size-4" />
+                      {signingOut ? "Saindo..." : "Sair da conta"}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </header>
           {children}
