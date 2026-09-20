@@ -62,3 +62,9 @@ export async function atualizarVenda(id: string, input: VendaInput): Promise<Ven
   if (error || !data) throwQueryError("Não foi possível atualizar a venda.", error);
   return data as Venda;
 }
+
+export async function excluirVenda(id: string): Promise<void> {
+  await requireAdminSession();
+  const { error } = await db.from("vendas").delete().eq("id", id);
+  if (error) throwQueryError("Não foi possível excluir a venda.", error);
+}
