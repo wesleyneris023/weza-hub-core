@@ -14,6 +14,12 @@ export type VendaListItem = Venda & { cliente: { nome: string; empresa: string |
 export type VendaInput = Omit<Venda, "id" | "created_at" | "updated_at">;
 export const vendasQueryKey = ["vendas"] as const;
 
+const vendaStatuses: readonly VendaStatus[] = ["proposta", "negociacao", "fechada", "perdida", "cancelada"];
+function parseVendaStatus(status: string): VendaStatus {
+  if (vendaStatuses.includes(status as VendaStatus)) return status as VendaStatus;
+  throw new Error(`Status de venda inesperado recebido do banco: ${status}`);
+}
+
 async function requireAdminSession() {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) throw new Error("Sua sessão expirou. Entre novamente.");
@@ -37,7 +43,7 @@ export async function listarVendas(): Promise<VendaListItem[]> {
     .select("*, cliente:clientes!vendas_cliente_id_fkey(nome, empresa), website:websites!vendas_website_id_fkey(nome)")
     .order("data_venda", { ascending: false }).order("created_at", { ascending: false });
   if (error) throwQueryError("Não foi possível carregar as vendas.", error);
-  return (data ?? []) as VendaListItem[];
+  return (data ?? []).map((row) => ({ ...row, status: parseVendaStatus(row.status) })) as VendaListItem[];
 }
 
 export async function listarClientesVenda() {
@@ -61,12 +67,12 @@ export async function criarVenda(input: VendaInput): Promise<Venda> {
   await requireAdminSession();
   const { data, error } = await salesClient.from("vendas").insert(input).select().single();
   if (error || !data) throwQueryError("Não foi possível registrar a venda.", error);
-  return data;
+  return { ...data, status: parseVendaStatus(data.status) };
 }
 
 export async function atualizarVenda(id: string, input: VendaInput): Promise<Venda> {
   await requireAdminSession();
   const { data, error } = await salesClient.from("vendas").update(input).eq("id", id).select().single();
   if (error || !data) throwQueryError("Não foi possível atualizar a venda.", error);
-  return data;
+  return { ...data, status: parseVendaStatus(data.status) };
 }
