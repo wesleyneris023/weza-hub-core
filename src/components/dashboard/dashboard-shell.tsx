@@ -24,10 +24,10 @@ export function DashboardShell() {
         hasError={metricsQuery.isError}
       />
       <DashboardCharts />
-      <div className="flex-1 px-4 pb-8 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1500px]">
+      <div className="flex-1 px-4 pb-8 sm:px-6 lg:px-7">
+        <div className="w-full">
           <DashboardLiveTables />
-          <p className="mt-6 text-center text-[11px] text-subtle">WEZA HUB · Informações carregadas dos registros do sistema</p>
+          <p className="mt-5 text-center text-[11px] text-slate-500">WEZA HUB · Informações carregadas dos registros do sistema</p>
         </div>
       </div>
     </AppShell>
