@@ -1,4 +1,8 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import type { DatabaseWithVendas } from "@/integrations/supabase/vendas-database";
+
+const salesClient = supabase as unknown as SupabaseClient<DatabaseWithVendas>;
 
 export type VendaStatus = "proposta" | "negociacao" | "fechada" | "perdida" | "cancelada";
 export type Venda = {
@@ -29,7 +33,7 @@ function throwQueryError(context: string, error: unknown): never {
 
 export async function listarVendas(): Promise<VendaListItem[]> {
   await requireAdminSession();
-  const { data, error } = await supabase.from("vendas")
+  const { data, error } = await salesClient.from("vendas")
     .select("*, cliente:clientes!vendas_cliente_id_fkey(nome, empresa), website:websites!vendas_website_id_fkey(nome)")
     .order("data_venda", { ascending: false }).order("created_at", { ascending: false });
   if (error) throwQueryError("Não foi possível carregar as vendas.", error);
@@ -55,14 +59,14 @@ export async function listarWebsitesVenda(clienteId?: string) {
 
 export async function criarVenda(input: VendaInput): Promise<Venda> {
   await requireAdminSession();
-  const { data, error } = await supabase.from("vendas").insert(input).select().single();
+  const { data, error } = await salesClient.from("vendas").insert(input).select().single();
   if (error || !data) throwQueryError("Não foi possível registrar a venda.", error);
-  return data as Venda;
+  return data;
 }
 
 export async function atualizarVenda(id: string, input: VendaInput): Promise<Venda> {
   await requireAdminSession();
-  const { data, error } = await supabase.from("vendas").update(input).eq("id", id).select().single();
+  const { data, error } = await salesClient.from("vendas").update(input).eq("id", id).select().single();
   if (error || !data) throwQueryError("Não foi possível atualizar a venda.", error);
-  return data as Venda;
+  return data;
 }
