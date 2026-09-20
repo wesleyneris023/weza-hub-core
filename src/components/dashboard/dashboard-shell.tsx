@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 
+import "@/styles/light-theme.css";
 import { AppShell } from "@/components/layout/app-shell";
 import { fetchDashboardMetrics } from "@/lib/dashboard.query";
 import { DashboardCharts } from "./dashboard-charts";
