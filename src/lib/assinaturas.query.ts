@@ -19,21 +19,27 @@ export type PlanoInput = Pick<Plano, "nome" | "descricao" | "valor_mensal" | "va
 export type AssinaturaInput = Pick<Assinatura, "cliente_id" | "website_id" | "plano_id" | "valor" | "data_inicio" | "proximo_vencimento" | "status" | "observacoes">;
 export const assinaturasQueryKey = ["assinaturas"] as const;
 export const planosQueryKey = ["planos"] as const;
-const db = supabase as any;
 
 async function requireAdminSession() {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) throw new Error("Sua sessão expirou. Entre novamente.");
 }
 
-function throwQueryError(context: string, error: any): never {
-  console.error(`[WEZA HUB] ${context}`, { code: error?.code, message: error?.message, hint: error?.hint });
+function throwQueryError(context: string, error: unknown): never {
+  const details = error && typeof error === "object"
+    ? error as { code?: unknown; message?: unknown; hint?: unknown }
+    : {};
+  console.error(`[WEZA HUB] ${context}`, {
+    code: details.code,
+    message: details.message,
+    hint: details.hint,
+  });
   throw new Error(context);
 }
 
 export async function listarAssinaturas(): Promise<AssinaturaListItem[]> {
   await requireAdminSession();
-  const { data, error } = await db.from("assinaturas")
+  const { data, error } = await supabase.from("assinaturas")
     .select("*, cliente:clientes!assinaturas_cliente_id_fkey(nome, empresa), website:websites!assinaturas_website_id_fkey(nome), plano:planos!assinaturas_plano_id_fkey(nome, periodo_cobranca)")
     .order("proximo_vencimento", { ascending: true }).order("created_at", { ascending: false });
   if (error) throwQueryError("Não foi possível carregar as assinaturas.", error);
@@ -42,14 +48,14 @@ export async function listarAssinaturas(): Promise<AssinaturaListItem[]> {
 
 export async function listarPlanos(): Promise<Plano[]> {
   await requireAdminSession();
-  const { data, error } = await db.from("planos").select("*").order("nome", { ascending: true });
+  const { data, error } = await supabase.from("planos").select("*").order("nome", { ascending: true });
   if (error) throwQueryError("Não foi possível carregar os planos.", error);
   return (data ?? []) as Plano[];
 }
 
 export async function listarClientesAssinatura() {
   await requireAdminSession();
-  const { data, error } = await db.from("clientes").select("id, nome, empresa, status")
+  const { data, error } = await supabase.from("clientes").select("id, nome, empresa, status")
     .eq("status", "ativo").order("nome", { ascending: true });
   if (error) throwQueryError("Não foi possível carregar os clientes.", error);
   return data ?? [];
@@ -57,7 +63,7 @@ export async function listarClientesAssinatura() {
 
 export async function listarWebsitesAssinatura(clienteId?: string) {
   await requireAdminSession();
-  let query = db.from("websites").select("id, nome, cliente_id").order("nome", { ascending: true });
+  let query = supabase.from("websites").select("id, nome, cliente_id").order("nome", { ascending: true });
   if (clienteId) query = query.eq("cliente_id", clienteId);
   const { data, error } = await query;
   if (error) throwQueryError("Não foi possível carregar os websites.", error);
@@ -66,25 +72,25 @@ export async function listarWebsitesAssinatura(clienteId?: string) {
 
 export async function criarPlano(input: PlanoInput): Promise<Plano> {
   await requireAdminSession();
-  const { data, error } = await db.from("planos").insert(input).select().single();
+  const { data, error } = await supabase.from("planos").insert(input).select().single();
   if (error || !data) throwQueryError("Não foi possível criar o plano.", error);
   return data as Plano;
 }
 export async function atualizarPlano(id: string, input: PlanoInput): Promise<Plano> {
   await requireAdminSession();
-  const { data, error } = await db.from("planos").update(input).eq("id", id).select().single();
+  const { data, error } = await supabase.from("planos").update(input).eq("id", id).select().single();
   if (error || !data) throwQueryError("Não foi possível atualizar o plano.", error);
   return data as Plano;
 }
 export async function criarAssinatura(input: AssinaturaInput): Promise<Assinatura> {
   await requireAdminSession();
-  const { data, error } = await db.from("assinaturas").insert(input).select().single();
+  const { data, error } = await supabase.from("assinaturas").insert(input).select().single();
   if (error || !data) throwQueryError("Não foi possível criar a assinatura.", error);
   return data as Assinatura;
 }
 export async function atualizarAssinatura(id: string, input: AssinaturaInput): Promise<Assinatura> {
   await requireAdminSession();
-  const { data, error } = await db.from("assinaturas").update(input).eq("id", id).select().single();
+  const { data, error } = await supabase.from("assinaturas").update(input).eq("id", id).select().single();
   if (error || !data) throwQueryError("Não foi possível atualizar a assinatura.", error);
   return data as Assinatura;
 }
