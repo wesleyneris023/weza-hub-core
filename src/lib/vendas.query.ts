@@ -9,21 +9,27 @@ export type Venda = {
 export type VendaListItem = Venda & { cliente: { nome: string; empresa: string | null } | null; website: { nome: string } | null };
 export type VendaInput = Omit<Venda, "id" | "created_at" | "updated_at">;
 export const vendasQueryKey = ["vendas"] as const;
-const db = supabase as any;
 
 async function requireAdminSession() {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) throw new Error("Sua sessão expirou. Entre novamente.");
 }
 
-function throwQueryError(context: string, error: any): never {
-  console.error(`[WEZA HUB] ${context}`, { code: error?.code, message: error?.message, hint: error?.hint });
+function throwQueryError(context: string, error: unknown): never {
+  const details = error && typeof error === "object"
+    ? error as { code?: unknown; message?: unknown; hint?: unknown }
+    : {};
+  console.error(`[WEZA HUB] ${context}`, {
+    code: details.code,
+    message: details.message,
+    hint: details.hint,
+  });
   throw new Error(context);
 }
 
 export async function listarVendas(): Promise<VendaListItem[]> {
   await requireAdminSession();
-  const { data, error } = await db.from("vendas")
+  const { data, error } = await supabase.from("vendas")
     .select("*, cliente:clientes!vendas_cliente_id_fkey(nome, empresa), website:websites!vendas_website_id_fkey(nome)")
     .order("data_venda", { ascending: false }).order("created_at", { ascending: false });
   if (error) throwQueryError("Não foi possível carregar as vendas.", error);
@@ -32,7 +38,7 @@ export async function listarVendas(): Promise<VendaListItem[]> {
 
 export async function listarClientesVenda() {
   await requireAdminSession();
-  const { data, error } = await db.from("clientes").select("id, nome, empresa, status")
+  const { data, error } = await supabase.from("clientes").select("id, nome, empresa, status")
     .eq("status", "ativo").order("nome", { ascending: true });
   if (error) throwQueryError("Não foi possível carregar os clientes.", error);
   return data ?? [];
@@ -40,7 +46,7 @@ export async function listarClientesVenda() {
 
 export async function listarWebsitesVenda(clienteId?: string) {
   await requireAdminSession();
-  let query = db.from("websites").select("id, nome, cliente_id").order("nome", { ascending: true });
+  let query = supabase.from("websites").select("id, nome, cliente_id").order("nome", { ascending: true });
   if (clienteId) query = query.eq("cliente_id", clienteId);
   const { data, error } = await query;
   if (error) throwQueryError("Não foi possível carregar os websites.", error);
@@ -49,14 +55,14 @@ export async function listarWebsitesVenda(clienteId?: string) {
 
 export async function criarVenda(input: VendaInput): Promise<Venda> {
   await requireAdminSession();
-  const { data, error } = await db.from("vendas").insert(input).select().single();
+  const { data, error } = await supabase.from("vendas").insert(input).select().single();
   if (error || !data) throwQueryError("Não foi possível registrar a venda.", error);
   return data as Venda;
 }
 
 export async function atualizarVenda(id: string, input: VendaInput): Promise<Venda> {
   await requireAdminSession();
-  const { data, error } = await db.from("vendas").update(input).eq("id", id).select().single();
+  const { data, error } = await supabase.from("vendas").update(input).eq("id", id).select().single();
   if (error || !data) throwQueryError("Não foi possível atualizar a venda.", error);
   return data as Venda;
 }
