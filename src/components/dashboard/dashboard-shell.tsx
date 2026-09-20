@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { AppShell } from "@/components/layout/app-shell";
-import { DashboardContent } from "./dashboard-content";
 import { fetchDashboardMetrics } from "@/lib/dashboard.query";
+import { DashboardCharts } from "./dashboard-charts";
+import { DashboardContent } from "./dashboard-content";
 
 export function DashboardShell() {
   const metricsQuery = useQuery({
@@ -21,6 +22,7 @@ export function DashboardShell() {
         isLoading={metricsQuery.isLoading}
         hasError={metricsQuery.isError}
       />
+      <DashboardCharts />
     </AppShell>
   );
 }
