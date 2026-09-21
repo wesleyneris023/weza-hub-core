@@ -59,7 +59,7 @@ export function AppShell({ children }: AppShellProps) {
     supabase.auth.getUser().then(({ data }) => {
       if (!mounted || !data.user) return;
       const user = data.user;
-      const metadataName = user.user_metadata?.full_name ?? user.user_metadata?.name;
+      const metadataName = user.user_metadata?.["full_name"] ?? user.user_metadata?.["name"];
       setProfileName(typeof metadataName === "string" && metadataName.trim()
         ? metadataName
         : user.email?.split("@")[0] || "Minha conta");
