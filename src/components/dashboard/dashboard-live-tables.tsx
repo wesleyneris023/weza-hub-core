@@ -12,6 +12,7 @@ type BillingRow = { id: string; valor: number | string; data_vencimento: string;
 function localDate(value: string) {
   if (!value) return "—";
   const [year, month, day] = value.slice(0, 10).split("-").map(Number);
+  if (year === undefined || month === undefined || day === undefined) return "—";
   return new Date(year, month - 1, day).toLocaleDateString("pt-BR");
 }
 
