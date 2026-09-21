@@ -45,12 +45,15 @@ async function validatePagamentoInput(input: PagamentoInput) {
   }
   if (input.faturamento_id) {
     const { data, error } = await db.from("faturamentos")
-      .select("id, cliente_id, assinatura_id")
+      .select("id, cliente_id, assinatura_id, valor")
       .eq("id", input.faturamento_id).maybeSingle();
     if (error) throwQueryError("Não foi possível validar o faturamento selecionado.", error);
     if (!data || data.cliente_id !== input.cliente_id) throw new Error("O faturamento selecionado não pertence ao cliente informado.");
     if (input.assinatura_id && data.assinatura_id !== input.assinatura_id) {
       throw new Error("A assinatura do pagamento deve corresponder à assinatura do faturamento.");
+    }
+    if (Number(input.valor) !== Number(data.valor)) {
+      throw new Error("Para vincular este pagamento, o valor deve ser igual ao valor integral do faturamento. Pagamentos parciais ainda não são suportados.");
     }
   }
 }
