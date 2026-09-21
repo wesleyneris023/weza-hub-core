@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type PagamentoStatus = "pendente" | "pago" | "atrasado" | "cancelado";
 export type Pagamento = {
-  id: string; cliente_id: string; assinatura_id: string | null; valor: number;
+  id: string; cliente_id: string; assinatura_id: string | null; faturamento_id: string | null; valor: number;
   data_vencimento: string; data_pagamento: string | null; status: PagamentoStatus;
   metodo_pagamento: string | null; referencia: string | null; observacoes: string | null;
   created_at: string; updated_at: string;
@@ -15,6 +15,10 @@ export type PagamentoInput = Omit<Pagamento, "id" | "created_at" | "updated_at">
 export type PagamentoClienteOption = { id: string; nome: string; empresa: string | null; status: string };
 export type PagamentoAssinaturaOption = {
   id: string; cliente_id: string; status: string; valor: number; proximo_vencimento: string;
+};
+export type PagamentoFaturamentoOption = {
+  id: string; cliente_id: string; assinatura_id: string | null; competencia: string;
+  valor: number; data_vencimento: string; status: string;
 };
 export const pagamentosQueryKey = ["pagamentos"] as const;
 const db = supabase as any;
@@ -38,6 +42,19 @@ async function validatePagamentoInput(input: PagamentoInput) {
     const { data, error } = await db.from("assinaturas").select("id, cliente_id").eq("id", input.assinatura_id).maybeSingle();
     if (error) throwQueryError("Não foi possível validar a assinatura selecionada.", error);
     if (!data || data.cliente_id !== input.cliente_id) throw new Error("A assinatura selecionada não pertence ao cliente informado.");
+  }
+  if (input.faturamento_id) {
+    const { data, error } = await db.from("faturamentos")
+      .select("id, cliente_id, assinatura_id, valor")
+      .eq("id", input.faturamento_id).maybeSingle();
+    if (error) throwQueryError("Não foi possível validar o faturamento selecionado.", error);
+    if (!data || data.cliente_id !== input.cliente_id) throw new Error("O faturamento selecionado não pertence ao cliente informado.");
+    if (input.assinatura_id && data.assinatura_id !== input.assinatura_id) {
+      throw new Error("A assinatura do pagamento deve corresponder à assinatura do faturamento.");
+    }
+    if (Number(input.valor) !== Number(data.valor)) {
+      throw new Error("Para vincular este pagamento, o valor deve ser igual ao valor integral do faturamento. Pagamentos parciais ainda não são suportados.");
+    }
   }
 }
 
@@ -66,6 +83,18 @@ export async function listarAssinaturasPagamento(clienteId?: string): Promise<Pa
   const { data, error } = await query;
   if (error) throwQueryError("Não foi possível carregar as assinaturas.", error);
   return (data ?? []) as PagamentoAssinaturaOption[];
+}
+
+export async function listarFaturamentosPagamento(clienteId?: string): Promise<PagamentoFaturamentoOption[]> {
+  await requireAdminSession();
+  let query = db.from("faturamentos")
+    .select("id, cliente_id, assinatura_id, competencia, valor, data_vencimento, status")
+    .neq("status", "cancelado")
+    .order("data_vencimento", { ascending: true });
+  if (clienteId) query = query.eq("cliente_id", clienteId);
+  const { data, error } = await query;
+  if (error) throwQueryError("Não foi possível carregar os faturamentos para vinculação.", error);
+  return (data ?? []) as PagamentoFaturamentoOption[];
 }
 
 export async function criarPagamento(input: PagamentoInput): Promise<Pagamento> {
