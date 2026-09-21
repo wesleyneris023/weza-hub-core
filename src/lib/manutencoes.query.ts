@@ -27,6 +27,23 @@ export type ManutencaoWebsiteOption = {
 export const manutencoesQueryKey = ["manutencoes"] as const;
 const db = supabase as any;
 
+// The form captures only the opening DATE, not a time. Store it at local
+// midnight so a same-day completion time (e.g. 03:23) cannot precede an
+// artificial noon timestamp and violate the database CHECK constraint.
+function normalizeDataAbertura(input: ManutencaoInput): ManutencaoInput {
+  const parsed = new Date(input.data_abertura);
+  if (Number.isNaN(parsed.getTime())) return input;
+
+  const localMidnight = new Date(
+    parsed.getFullYear(),
+    parsed.getMonth(),
+    parsed.getDate(),
+    0, 0, 0, 0,
+  );
+
+  return { ...input, data_abertura: localMidnight.toISOString() };
+}
+
 async function requireAdminSession() {
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) throw new Error("Sua sessão expirou. Entre novamente.");
@@ -65,14 +82,14 @@ export async function listarWebsitesManutencao(clienteId?: string): Promise<Manu
 
 export async function criarManutencao(input: ManutencaoInput): Promise<Manutencao> {
   await requireAdminSession();
-  const { data, error } = await db.from("manutencoes").insert(input).select().single();
+  const { data, error } = await db.from("manutencoes").insert(normalizeDataAbertura(input)).select().single();
   if (error || !data) throwQueryError("Não foi possível registrar a manutenção.", error);
   return data as Manutencao;
 }
 
 export async function atualizarManutencao(id: string, input: ManutencaoInput): Promise<Manutencao> {
   await requireAdminSession();
-  const { data, error } = await db.from("manutencoes").update(input).eq("id", id).select().single();
+  const { data, error } = await db.from("manutencoes").update(normalizeDataAbertura(input)).eq("id", id).select().single();
   if (error || !data) throwQueryError("Não foi possível atualizar a manutenção.", error);
   return data as Manutencao;
 }
